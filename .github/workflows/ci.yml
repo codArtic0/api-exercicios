@@ -22,3 +22,17 @@ jobs:
 
       - name: Instalar dependências
         run: npm ci
+
+  check-source-branch:
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Exigir que o PR venha da develop
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$HEAD_REF" != "develop" ] || [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error::PRs para a main só podem vir da develop (veio de '$HEAD_REF')."
+            exit 1
+          fi
