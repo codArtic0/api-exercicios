@@ -19,8 +19,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: api/package-lock.json
 
       - name: Instalar dependências
+        working-directory: api
         run: npm ci
 
   check-source-branch:
