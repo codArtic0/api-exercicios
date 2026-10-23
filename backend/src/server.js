@@ -1,14 +1,8 @@
 import 'dotenv/config';
-import express from 'express'
-const app = express()
-const port = process.env.PORT;
+import app from './app.js';
 
-
-app.get('/', (req, res) => {
-  res.send('Servidor rodando com sucesso!');
-});
+const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
-
