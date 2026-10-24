@@ -87,3 +87,18 @@ jobs:
             echo "::error::PRs para a main só podem vir da develop (veio de '$HEAD_REF')."
             exit 1
           fi
+
+  secrets-scan:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
