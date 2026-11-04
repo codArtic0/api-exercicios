@@ -10,6 +10,14 @@ export const DEFAULT_VALUES = { sets: '3', reps: '12', weightKg: '20' }
 export const parseNumber = (text) => Number(String(text).replace(',', '.'))
 export const toText = (n) => String(n).replace('.', ',')
 
+// Soma ou subtrai um passo do campo, respeitando os limites.
+export function bumpValue(field, currentText, direction) {
+  const current = parseNumber(currentText)
+  const base = Number.isFinite(current) ? current : 0
+  const next = Math.min(field.max, Math.max(field.min, Math.round((base + direction * field.step) * 10) / 10))
+  return toText(next)
+}
+
 const oneDecimal = (n) => Math.abs(n * 10 - Math.round(n * 10)) < 1e-9
 
 // Devolve a mensagem de erro (string) ou os números já convertidos.

@@ -93,3 +93,53 @@ export const Check = ({ size = 22, ...props }) => (
     <path d="m5 12.5 4.5 4.5L19 7.5" />
   </svg>
 )
+
+export const Pencil = ({ size = 20, ...props }) => (
+  <svg {...base} width={size} height={size} {...props}>
+    <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4ZM13.5 6.5l4 4" />
+  </svg>
+)
+
+export const Play = ({ size = 20, ...props }) => (
+  <svg {...base} width={size} height={size} {...props}>
+    <path d="M7 4.5v15l12-7.5-12-7.5Z" />
+  </svg>
+)
+
+export const Trash = ({ size = 20, ...props }) => (
+  <svg {...base} width={size} height={size} {...props}>
+    <path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13M10 11v5M14 11v5" />
+  </svg>
+)
+
+export const Clock = ({ size = 18, ...props }) => (
+  <svg {...base} width={size} height={size} {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </svg>
+)
+
+export const ArrowUp = ({ size = 18, ...props }) => (
+  <svg {...base} width={size} height={size} {...props}>
+    <path d="M12 19V5M6 11l6-6 6 6" />
+  </svg>
+)
+
+export const ArrowDown = ({ size = 18, ...props }) => (
+  <svg {...base} width={size} height={size} {...props}>
+    <path d="M12 5v14M6 13l6 6 6-6" />
+  </svg>
+)
+
+export const Close = ({ size = 22, ...props }) => (
+  <svg {...base} width={size} height={size} {...props}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </svg>
+)
+
+export const Clipboard = ({ size = 22, ...props }) => (
+  <svg {...base} width={size} height={size} {...props}>
+    <rect x="5" y="4" width="14" height="17" rx="2" />
+    <path d="M9 4V3h6v1M9 11h6M9 15h6" />
+  </svg>
+)
