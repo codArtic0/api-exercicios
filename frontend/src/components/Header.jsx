@@ -9,12 +9,12 @@ export default function Header({ onBack, title, onLogout }) {
             <ChevronLeft />
           </button>
         ) : (
-          <div className="brand">
-            <Bolt size={22} />
+          <div className="wordmark">
+            <Bolt size={18} />
             <span>IRONLOG</span>
           </div>
         )}
-        {title && <p className="topbar__title">{title}</p>}
+        {title && <p className="topbar__title micro">{title}</p>}
         <button className="icon-btn" onClick={onLogout} aria-label="Sair">
           <LogOut />
         </button>

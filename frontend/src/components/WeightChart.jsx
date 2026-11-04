@@ -1,18 +1,22 @@
+import { useState } from 'react'
 import { entryVolume, formatNumber, formatShortDate } from '../lib/stats.js'
 
-const W = 320
-const H = 170
-const PAD = { top: 22, right: 18, bottom: 28, left: 18 }
+const W = 340
+const H = 190
+const PAD = { top: 14, right: 14, bottom: 26, left: 46 }
 const MAX_POINTS = 12
 
 const METRICS = {
-  weight: { label: 'Carga (kg)', value: (e) => e.weightKg },
-  volume: { label: 'Volume (kg)', value: entryVolume },
+  weight: { label: 'Carga', value: (e) => e.weightKg },
+  volume: { label: 'Volume', value: entryVolume },
 }
 
+// Evolução nos últimos registros. Linha de 2 px, marcas de 8 px com anel da cor do fundo,
+// só o último ponto em destaque. Toque ou mouse sobre o gráfico mostra o valor de cada registro.
 export default function WeightChart({ entries, metric = 'weight' }) {
   const { label, value } = METRICS[metric]
   const points = entries.slice(-MAX_POINTS)
+  const [picked, setPicked] = useState(null)
 
   if (points.length < 2) {
     return (
@@ -23,71 +27,91 @@ export default function WeightChart({ entries, metric = 'weight' }) {
   }
 
   const values = points.map(value)
-  const min = Math.min(...values)
-  const max = Math.max(...values)
-  const span = max - min || 1
+  const rawMin = Math.min(...values)
+  const rawMax = Math.max(...values)
+  const pad = (rawMax - rawMin || rawMax || 1) * 0.15
+  const lo = Math.max(0, rawMin - pad)
+  const hi = rawMax + pad
   const innerW = W - PAD.left - PAD.right
   const innerH = H - PAD.top - PAD.bottom
 
-  const coords = points.map((p, i) => ({
-    x: PAD.left + (i / (points.length - 1)) * innerW,
-    y: PAD.top + innerH - ((value(p) - min) / span) * innerH,
-    p,
-  }))
+  const x = (i) => PAD.left + (i / (points.length - 1)) * innerW
+  const y = (v) => PAD.top + innerH - ((v - lo) / (hi - lo)) * innerH
+  const coords = points.map((p, i) => ({ x: x(i), y: y(values[i]), p, v: values[i] }))
+
   const line = coords.map((c) => `${c.x},${c.y}`).join(' ')
-  const area = `${PAD.left},${H - PAD.bottom} ${line} ${W - PAD.right},${H - PAD.bottom}`
-  const last = coords.at(-1)
-  const summary = `${label} por registro, de ${formatNumber(values[0])} a ${formatNumber(values.at(-1))} em ${points.length} registros.`
+  const area = `${PAD.left},${PAD.top + innerH} ${line} ${x(points.length - 1)},${PAD.top + innerH}`
+  const ticks = [hi, (hi + lo) / 2, lo]
+
+  const index = picked ?? points.length - 1
+  const shown = coords[index]
+
+  function onMove(e) {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const px = ((e.clientX - rect.left) / rect.width) * W
+    const nearest = coords.reduce((best, c, i) => (Math.abs(c.x - px) < Math.abs(coords[best].x - px) ? i : best), 0)
+    setPicked(nearest)
+  }
 
   return (
     <figure className="chart">
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={summary}>
+      <div className="chart__readout" aria-live="polite">
+        <span className="micro">{formatShortDate(shown.p.performedAt)}</span>
+        <strong className="chart__value">
+          {formatNumber(shown.v)}
+          <small> kg</small>
+        </strong>
+        <span className="micro">
+          {shown.p.sets} × {shown.p.reps} · {formatNumber(shown.p.weightKg)} kg
+        </span>
+      </div>
+
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        role="img"
+        aria-label={`${label} por registro, de ${formatNumber(values[0])} a ${formatNumber(values.at(-1))} kg em ${points.length} registros.`}
+        onPointerMove={onMove}
+        onPointerDown={onMove}
+        onPointerLeave={(e) => e.pointerType === 'mouse' && setPicked(null)}
+      >
         <defs>
           <linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="var(--neon)" stopOpacity="0.38" />
-            <stop offset="1" stopColor="var(--neon)" stopOpacity="0" />
+            <stop offset="0" stopColor="var(--accent)" stopOpacity="0.26" />
+            <stop offset="1" stopColor="var(--accent)" stopOpacity="0" />
           </linearGradient>
         </defs>
-        {[0, 0.5, 1].map((t) => (
-          <line
-            key={t}
-            x1={PAD.left}
-            x2={W - PAD.right}
-            y1={PAD.top + innerH * t}
-            y2={PAD.top + innerH * t}
-            className="chart__grid"
-          />
+
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} className="chart__grid" />
+            <text x={PAD.left - 8} y={y(t) + 3.5} textAnchor="end" className="chart__axis">
+              {formatNumber(t)}
+            </text>
+          </g>
         ))}
+
         <polygon points={area} fill="url(#chart-fill)" className="chart__area" />
         <polyline points={line} pathLength="1" className="chart__line" />
+
+        <line x1={shown.x} x2={shown.x} y1={PAD.top} y2={PAD.top + innerH} className="chart__cursor" />
         {coords.map((c, i) => (
-          <circle key={c.p.id} cx={c.x} cy={c.y} r="3.5" className="chart__dot" style={{ '--i': i }} />
+          <circle
+            key={c.p.id}
+            cx={c.x}
+            cy={c.y}
+            r={i === index ? 5.5 : 4}
+            className={i === index ? 'chart__dot chart__dot--on' : 'chart__dot'}
+            style={{ '--i': i }}
+          />
         ))}
-        <circle
-          cx={last.x}
-          cy={last.y}
-          r="6"
-          className="chart__dot chart__dot--last"
-          style={{ '--i': coords.length }}
-        />
-        <text
-          x={Math.min(last.x, W - PAD.right - 18)}
-          y={last.y - 12}
-          textAnchor="middle"
-          className="chart__label"
-        >
-          {formatNumber(values.at(-1))} kg
-        </text>
-        <text x={PAD.left} y={H - 8} className="chart__axis">
+
+        <text x={PAD.left} y={H - 6} className="chart__axis">
           {formatShortDate(points[0].performedAt)}
         </text>
-        <text x={W - PAD.right} y={H - 8} textAnchor="end" className="chart__axis">
+        <text x={W - PAD.right} y={H - 6} textAnchor="end" className="chart__axis">
           {formatShortDate(points.at(-1).performedAt)}
         </text>
       </svg>
-      <figcaption>
-        {label} nos últimos {points.length} registros
-      </figcaption>
     </figure>
   )
 }

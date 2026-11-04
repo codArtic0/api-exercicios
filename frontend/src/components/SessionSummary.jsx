@@ -1,15 +1,25 @@
 import { useState } from 'react'
 import { api, describeError } from '../lib/api.js'
 import { formatLongDate, formatNumber } from '../lib/stats.js'
-import { ArrowDown, ArrowUp, Clock, Trash, Trophy } from './Icons.jsx'
+import { useCountUp } from '../lib/useCountUp.js'
+import Gauge from './Gauge.jsx'
+import { ArrowDown, ArrowUp, Trash, Trophy } from './Icons.jsx'
 
 // Estatísticas de um treino realizado: logo após finalizar ou ao abrir pelo histórico.
-export default function SessionSummary({ session, justFinished, onClose, onDeleted }) {
+// "planned" (volume do modelo) só existe logo após finalizar. Com ele aparecem o medidor e as
+// barras hachuradas do que o modelo previa; sem ele, só o que foi feito.
+export default function SessionSummary({ session, planned, justFinished, onClose, onDeleted }) {
   const { stats } = session
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const maxVolume = Math.max(...session.items.map((i) => i.volume), 1)
+  const volume = useCountUp(stats.totalVolume)
+
   const previous = stats.previous
+  const pct = planned && planned.volume > 0 ? (stats.totalVolume / planned.volume) * 100 : null
+  const maxBar = Math.max(
+    ...session.items.flatMap((i) => [i.volume, planned?.byExercise?.[i.exercise.id] ?? 0]),
+    1,
+  )
 
   async function remove() {
     if (!window.confirm('Apagar este treino? As séries que ele registrou também serão apagadas.')) return
@@ -24,79 +34,99 @@ export default function SessionSummary({ session, justFinished, onClose, onDelet
   }
 
   return (
-    <section className="summary">
-      <div className="summary__head">
-        <p className="banner__group">{justFinished ? 'Treino concluído' : formatLongDate(session.finishedAt)}</p>
-        <h1 className="wizard__title">{session.workoutName}</h1>
-        {session.durationMinutes !== null && (
-          <p className="runner__clock">
-            <Clock />
-            {session.durationMinutes < 1 ? 'menos de 1 min' : `${session.durationMinutes} min`}
-          </p>
-        )}
-      </div>
+    <>
+      <header className="greet">
+        <p className="micro">{justFinished ? 'Treino concluído' : formatLongDate(session.finishedAt)}</p>
+        <h1 className="title-xl">{session.workoutName}</h1>
+      </header>
 
-      <div className="summary__hero">
-        <span className="tile__label">Volume total</span>
-        <strong className="summary__volume">{formatNumber(stats.totalVolume)}</strong>
-        <span className="tile__unit">kg</span>
+      <section className="panel hud hero" aria-label="Volume total">
+        <span className="micro">Volume total</span>
+        <strong className="hero__num num">
+          {formatNumber(volume)}
+          <small>kg</small>
+        </strong>
         {previous && (
           <span className={previous.deltaPct >= 0 ? 'delta delta--up' : 'delta delta--down'}>
-            {previous.deltaPct >= 0 ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
-            {formatNumber(Math.abs(previous.deltaPct))}% vs treino anterior ({formatNumber(previous.totalVolume)} kg)
+            {previous.deltaPct >= 0 ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+            {formatNumber(Math.abs(previous.deltaPct))}% vs treino anterior
+            <span className="num"> ({formatNumber(previous.totalVolume)} kg)</span>
           </span>
         )}
-      </div>
+      </section>
 
-      <div className="tiles tiles--two">
-        <div className="tile">
-          <span className="tile__label">Séries</span>
-          <strong className="tile__value">{stats.totalSets}</strong>
-          <span className="tile__unit">no total</span>
-        </div>
-        <div className="tile">
-          <span className="tile__label">Exercícios</span>
-          <strong className="tile__value">{stats.exerciseCount}</strong>
-          <span className="tile__unit">feitos</span>
-        </div>
-      </div>
+      <section className={pct === null ? 'facts-wrap' : 'facts-wrap facts-wrap--gauge'}>
+        {pct !== null && <Gauge value={pct} label="Volume feito em relação ao modelo" caption="do modelo" />}
+        <dl className="facts">
+          <div>
+            <dt className="micro">Séries</dt>
+            <dd className="num">{stats.totalSets}</dd>
+          </div>
+          <div>
+            <dt className="micro">Exercícios</dt>
+            <dd className="num">{stats.exerciseCount}</dd>
+          </div>
+          <div>
+            <dt className="micro">Duração</dt>
+            <dd className="num">
+              {session.durationMinutes === null ? '—' : session.durationMinutes < 1 ? '<1 min' : `${session.durationMinutes} min`}
+            </dd>
+          </div>
+        </dl>
+      </section>
 
       {stats.bestExercise && (
-        <div className="highlights">
+        <section className="highlights">
           <div className="highlight">
-            <Trophy size={20} />
-            <span className="tile__label">Melhor exercício</span>
+            <span className="micro">
+              <Trophy size={12} /> Melhor exercício
+            </span>
             <strong>{stats.bestExercise.name}</strong>
-            <small>{formatNumber(stats.bestExercise.volume)} kg de volume</small>
+            <span className="num">{formatNumber(stats.bestExercise.volume)} kg de volume</span>
           </div>
           <div className="highlight">
-            <Trophy size={20} />
-            <span className="tile__label">Mais pesado</span>
+            <span className="micro">
+              <Trophy size={12} /> Mais pesado
+            </span>
             <strong>{stats.heaviest.name}</strong>
-            <small>{formatNumber(stats.heaviest.weightKg)} kg</small>
+            <span className="num">{formatNumber(stats.heaviest.weightKg)} kg</span>
           </div>
-        </div>
+        </section>
       )}
 
-      <div>
-        <h2 className="section-title">Exercícios</h2>
+      <section>
+        <header className="sec">
+          <h2 className="micro">Exercícios</h2>
+          {planned && (
+            <span className="legend micro">
+              <i className="legend__swatch legend__swatch--plan" /> Modelo
+              <i className="legend__swatch" /> Feito
+            </span>
+          )}
+        </header>
         <ul className="bars">
-          {session.items.map((item, index) => (
-            <li key={item.exercise.id} className="bars__row" style={{ '--i': index }}>
-              <div className="bars__label">
-                <strong>{item.exercise.name}</strong>
-                <span>
-                  {item.sets} × {item.reps} · {formatNumber(item.weightKg)} kg
-                </span>
-              </div>
-              <div className="bars__track">
-                <span className="bars__fill" style={{ '--w': `${(item.volume / maxVolume) * 100}%` }} />
-              </div>
-              <span className="bars__value">{formatNumber(item.volume)} kg</span>
-            </li>
-          ))}
+          {session.items.map((item, index) => {
+            const plan = planned?.byExercise?.[item.exercise.id]
+            return (
+              <li key={item.exercise.id} className="bars__row" style={{ '--i': index }}>
+                <div className="bars__label">
+                  <strong>{item.exercise.name}</strong>
+                  <span className="num">
+                    {item.sets} × {item.reps} · {formatNumber(item.weightKg)} kg
+                  </span>
+                </div>
+                <span className="bars__value num">{formatNumber(item.volume)} kg</span>
+                <div className={plan !== undefined ? 'bars__track bars__track--pair' : 'bars__track'}>
+                  {plan !== undefined && (
+                    <span className="bars__plan" style={{ '--w': `${(plan / maxBar) * 100}%` }} />
+                  )}
+                  <span className="bars__fill" style={{ '--w': `${(item.volume / maxBar) * 100}%` }} />
+                </div>
+              </li>
+            )
+          })}
         </ul>
-      </div>
+      </section>
 
       {error && (
         <p className="alert" role="alert">
@@ -108,11 +138,11 @@ export default function SessionSummary({ session, justFinished, onClose, onDelet
         Concluir
       </button>
       {!justFinished && (
-        <button className="btn btn--danger btn--icon" onClick={remove} disabled={busy}>
-          <Trash size={20} />
+        <button className="btn btn--danger" onClick={remove} disabled={busy}>
+          <Trash size={18} />
           Apagar este treino
         </button>
       )}
-    </section>
+    </>
   )
 }

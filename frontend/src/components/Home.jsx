@@ -5,7 +5,8 @@ import { formatNumber } from '../lib/stats.js'
 import { useDebounced } from '../lib/useDebounced.js'
 import { ChevronRight, Dumbbell, Plus, Search } from './Icons.jsx'
 
-export default function Home({ user, groups, group, onGroupChange, onOpen, onAdd }) {
+// Biblioteca de exercícios: catálogo padrão mais os do próprio usuário.
+export default function Home({ groups, group, onGroupChange, onOpen, onAdd }) {
   const [search, setSearch] = useState('')
   const q = useDebounced(search.trim(), 300)
 
@@ -28,31 +29,16 @@ export default function Home({ user, groups, group, onGroupChange, onOpen, onAdd
 
   return (
     <>
-      <section className="hero">
-        <p className="hero__hello">Bora treinar{user ? `, ${user.name.split(' ')[0]}` : ''}?</p>
-        <h1 className="hero__title">Escolha o grupo muscular</h1>
-      </section>
-
-      <div className="chips" role="group" aria-label="Grupo muscular">
-        <button className="chip" aria-pressed={group === null} onClick={() => onGroupChange(null)}>
-          <Dumbbell size={18} />
-          Todos
-        </button>
-        {groups.map(({ id, name }) => {
-          const Icon = GROUP_ICONS[name] ?? DEFAULT_ICON
-          return (
-            <button
-              key={id}
-              className="chip"
-              aria-pressed={group === name}
-              onClick={() => onGroupChange(group === name ? null : name)}
-            >
-              <Icon size={18} />
-              {name}
-            </button>
-          )
-        })}
-      </div>
+      <header className="greet">
+        <p className="micro">Biblioteca</p>
+        <div className="sec sec--title">
+          <h1 className="title-xl">Exercícios</h1>
+          <button className="btn btn--sm btn--outline" onClick={onAdd}>
+            <Plus size={16} />
+            Novo
+          </button>
+        </div>
+      </header>
 
       <label className="search">
         <Search />
@@ -65,16 +51,32 @@ export default function Home({ user, groups, group, onGroupChange, onOpen, onAdd
         />
       </label>
 
+      <div className="chips" role="group" aria-label="Grupo muscular">
+        <button className="chip" aria-pressed={group === null} onClick={() => onGroupChange(null)}>
+          Todos
+        </button>
+        {groups.map(({ id, name }) => (
+          <button
+            key={id}
+            className="chip"
+            aria-pressed={group === name}
+            onClick={() => onGroupChange(group === name ? null : name)}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+
       <section aria-live="polite" aria-busy={loading}>
-        <h2 className="section-title">
-          {group ?? 'Todos os exercícios'}
-          {!loading && !result.error && <span className="count">{result.items.length}</span>}
-        </h2>
+        <header className="sec">
+          <h2 className="micro">{group ?? 'Todos os grupos'}</h2>
+          {!loading && !result.error && <span className="micro num">{result.items.length} exercícios</span>}
+        </header>
 
         {loading && (
           <ul className="list" aria-hidden="true">
-            {[0, 1, 2].map((i) => (
-              <li key={i} className="card card--skeleton" />
+            {[0, 1, 2, 3].map((i) => (
+              <li key={i} className="row row--skeleton" />
             ))}
           </ul>
         )}
@@ -87,12 +89,12 @@ export default function Home({ user, groups, group, onGroupChange, onOpen, onAdd
 
         {!loading && !result.error && result.items.length === 0 && (
           <div className="empty">
-            <Dumbbell size={40} />
+            <Dumbbell size={36} />
             <p>
               Nenhum exercício {group ? `em ${group}` : 'encontrado'}
               {q ? ` para “${q}”` : ''}.
             </p>
-            <small>Toque no + para adicionar um exercício.</small>
+            <small>Toque em Novo para adicionar um exercício.</small>
           </div>
         )}
 
@@ -103,21 +105,21 @@ export default function Home({ user, groups, group, onGroupChange, onOpen, onAdd
               const groupsLabel = [ex.primaryGroup.name, ...ex.relatedGroups.map((g) => g.name)].join(' · ')
               return (
                 <li key={ex.id} style={{ '--i': Math.min(i, 8) }}>
-                  <button className="card" onClick={() => onOpen(ex)}>
-                    <span className="card__icon">
-                      <Icon size={26} />
+                  <button className="row" onClick={() => onOpen(ex)}>
+                    <span className="row__icon">
+                      <Icon size={22} />
                     </span>
-                    <span className="card__body">
+                    <span className="row__main">
                       <strong>
                         {ex.name}
                         {!ex.isCatalog && <span className="tag">Meu</span>}
                       </strong>
-                      <span className="card__last">
+                      <span className={ex.lastEntry ? 'num row__meta' : 'num row__meta row__meta--none'}>
                         {ex.lastEntry
-                          ? `${formatNumber(ex.lastEntry.weightKg)} kg · ${ex.lastEntry.sets} séries de ${ex.lastEntry.reps} repetições`
-                          : 'Sem registros ainda'}
+                          ? `${formatNumber(ex.lastEntry.weightKg)} kg · ${ex.lastEntry.sets}×${ex.lastEntry.reps}`
+                          : 'Sem registros'}
                       </span>
-                      <small>{groupsLabel}</small>
+                      <span className="micro">{groupsLabel}</span>
                     </span>
                     <ChevronRight />
                   </button>
@@ -127,10 +129,6 @@ export default function Home({ user, groups, group, onGroupChange, onOpen, onAdd
           </ul>
         )}
       </section>
-
-      <button className="fab" onClick={() => onAdd(group)} aria-label="Adicionar exercício">
-        <Plus size={30} />
-      </button>
     </>
   )
 }

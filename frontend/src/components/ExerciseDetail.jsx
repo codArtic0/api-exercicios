@@ -1,13 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, describeError } from '../lib/api.js'
-import { DEFAULT_ICON, GROUP_ICONS } from '../lib/groups.js'
-import {
-  byDateAsc,
-  computeStats,
-  entryVolume,
-  formatDateTime,
-  formatNumber,
-} from '../lib/stats.js'
+import { byDateAsc, computeStats, entryVolume, formatNumber } from '../lib/stats.js'
 import EntryForm from './EntryForm.jsx'
 import { Trophy } from './Icons.jsx'
 import WeightChart from './WeightChart.jsx'
@@ -33,7 +26,6 @@ export default function ExerciseDetail({ exercise }) {
   const { entries } = state
   const stats = computeStats(entries)
   const last = entries.at(-1)
-  const Icon = GROUP_ICONS[exercise.primaryGroup.name] ?? DEFAULT_ICON
 
   async function register(values) {
     const created = await api.createEntry(exercise.id, values)
@@ -42,53 +34,61 @@ export default function ExerciseDetail({ exercise }) {
 
   return (
     <>
-      <section className="banner">
-        <span className="banner__icon">
-          <Icon size={30} />
-        </span>
-        <div>
-          <p className="banner__group">
-            {[exercise.primaryGroup.name, ...(exercise.relatedGroups ?? []).map((g) => g.name)].join(', ')}
-          </p>
-          <h1 className="banner__title">{exercise.name}</h1>
-        </div>
-      </section>
+      <header className="greet">
+        <p className="micro">
+          {[exercise.primaryGroup.name, ...(exercise.relatedGroups ?? []).map((g) => g.name)].join(' · ')}
+        </p>
+        <h1 className="title-xl">{exercise.name}</h1>
+      </header>
 
       {loading ? (
-        <div className="tiles" aria-hidden="true">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="tile tile--skeleton" />
-          ))}
-        </div>
+        <div className="panel panel--skeleton" aria-hidden="true" />
       ) : state.error ? (
         <p className="alert" role="alert">
           {state.error}
         </p>
       ) : (
         <>
-          <section className="tiles" aria-label="Seus recordes">
-            <Tile label="Peso máx." value={stats ? formatNumber(stats.maxWeight) : '—'} unit="kg" />
-            <Tile label="Reps máx." value={stats ? stats.maxReps : '—'} unit="reps" />
-            <Tile label="Volume máx." value={stats ? formatNumber(stats.maxVolume) : '—'} unit="kg" />
+          <section className="kpis" aria-label="Seus recordes">
+            <div className="kpi">
+              <span className="micro">Peso máx</span>
+              <strong className="kpi__value">{stats ? formatNumber(stats.maxWeight) : '—'}</strong>
+              <span className="micro">kg</span>
+            </div>
+            <div className="kpi">
+              <span className="micro">Reps máx</span>
+              <strong className="kpi__value">{stats ? stats.maxReps : '—'}</strong>
+              <span className="micro">reps</span>
+            </div>
+            <div className="kpi">
+              <span className="micro">Volume máx</span>
+              <strong className="kpi__value">{stats ? formatNumber(stats.maxVolume) : '—'}</strong>
+              <span className="micro">kg</span>
+            </div>
           </section>
 
-          <div className="segmented" role="radiogroup" aria-label="Métrica do gráfico">
-            {[
-              ['weight', 'Peso (kg)'],
-              ['volume', 'Volume (kg)'],
-            ].map(([value, label]) => (
-              <button
-                key={value}
-                role="radio"
-                aria-checked={metric === value}
-                className="segmented__btn"
-                onClick={() => setMetric(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <WeightChart key={metric} entries={entries} metric={metric} />
+          <section className="panel">
+            <header className="sec">
+              <h2 className="micro">Evolução</h2>
+              <div className="segmented" role="radiogroup" aria-label="Métrica do gráfico">
+                {[
+                  ['weight', 'Carga'],
+                  ['volume', 'Volume'],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    role="radio"
+                    aria-checked={metric === value}
+                    className="segmented__btn"
+                    onClick={() => setMetric(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </header>
+            <WeightChart key={metric} entries={entries} metric={metric} />
+          </section>
 
           <EntryForm
             initial={last ? { sets: last.sets, reps: last.reps, weightKg: last.weightKg } : DEFAULTS}
@@ -96,51 +96,52 @@ export default function ExerciseDetail({ exercise }) {
           />
 
           <section>
-            <h2 className="section-title">
-              Histórico
-              <span className="count">{entries.length}</span>
-            </h2>
+            <header className="sec">
+              <h2 className="micro">Histórico</h2>
+              <span className="micro num">{entries.length} registros</span>
+            </header>
             {entries.length === 0 ? (
               <div className="empty">
                 <p>Nenhuma série registrada ainda.</p>
                 <small>Registre a primeira acima.</small>
               </div>
             ) : (
-              <ul className="history">
-                {[...entries].reverse().map((e, i) => (
-                  <li key={e.id} className="history__item" style={{ '--i': Math.min(i, 8) }}>
-                    <div>
-                      <strong>
-                        {e.sets} × {e.reps} · {formatNumber(e.weightKg)} kg
-                      </strong>
-                      <small>{formatDateTime(e.performedAt)}</small>
-                    </div>
-                    <div className="history__right">
-                      {stats && e.weightKg === stats.maxWeight && (
-                        <span className="badge">
-                          <Trophy size={14} />
-                          PR
+              <ul className="list">
+                {[...entries].reverse().map((e, i) => {
+                  const date = new Date(e.performedAt)
+                  return (
+                    <li key={e.id} className="row row--static" style={{ '--i': Math.min(i, 8) }}>
+                      <span className="row__date">
+                        <strong>{date.getDate()}</strong>
+                        <span className="micro">
+                          {date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}
                         </span>
-                      )}
-                      <span className="history__volume">{formatNumber(entryVolume(e))} kg</span>
-                    </div>
-                  </li>
-                ))}
+                      </span>
+                      <span className="row__main">
+                        <strong className="num">
+                          {e.sets} × {e.reps} · {formatNumber(e.weightKg)} kg
+                        </strong>
+                        <span className="micro">
+                          {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </span>
+                      <span className="row__end">
+                        {stats && e.weightKg === stats.maxWeight && (
+                          <span className="tag tag--solid">
+                            <Trophy size={12} />
+                            PR
+                          </span>
+                        )}
+                        <span className="num">{formatNumber(entryVolume(e))} kg</span>
+                      </span>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </section>
         </>
       )}
     </>
-  )
-}
-
-function Tile({ label, value, unit }) {
-  return (
-    <div className="tile">
-      <span className="tile__label">{label}</span>
-      <strong className="tile__value">{value}</strong>
-      <span className="tile__unit">{unit}</span>
-    </div>
   )
 }

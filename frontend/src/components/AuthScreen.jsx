@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { api, describeError, tokenStorage } from '../lib/api.js'
-import { Barbell, Bolt, Dumbbell, Kettlebell, Plate } from './Icons.jsx'
+import { Bolt } from './Icons.jsx'
+
+// Os três passos do app, em paralelogramos. O do meio é o que o app faz de diferente.
+const FLOW = [
+  { label: 'Planejar', hint: 'seus modelos' },
+  { label: 'Treinar', hint: 'ajuste no dia', on: true },
+  { label: 'Evoluir', hint: 'recordes' },
+]
 
 export default function AuthScreen({ onAuthed }) {
   const [mode, setMode] = useState('login')
@@ -36,23 +43,28 @@ export default function AuthScreen({ onAuthed }) {
   return (
     <main className="auth">
       <section className="auth__hero">
-        <div className="auth__deco" aria-hidden="true">
-          <Plate size={140} className="deco deco--plate" />
-          <Dumbbell size={72} className="deco deco--dumbbell" />
-          <Kettlebell size={64} className="deco deco--kettle" />
-          <Barbell size={90} className="deco deco--barbell" />
-        </div>
-        <div className="brand brand--lg">
-          <Bolt size={30} />
+        <div className="wordmark wordmark--lg">
+          <Bolt size={22} />
           <span>IRONLOG</span>
         </div>
         <h1 className="auth__title">
-          Cada série <em>conta.</em>
+          Cada série
+          <br />
+          <em>conta.</em>
         </h1>
-        <p className="auth__lead">Registre peso, repetições e séries e veja sua carga evoluir.</p>
+        <p className="auth__lead">Planeje seus treinos, ajuste no dia e veja a carga evoluir.</p>
+
+        <ol className="flow" aria-label="Como funciona">
+          {FLOW.map((step, i) => (
+            <li key={step.label} className={step.on ? 'flow__step flow__step--on' : 'flow__step'} style={{ '--i': i }}>
+              <span className="flow__label">{step.label}</span>
+              <span className="micro">{step.hint}</span>
+            </li>
+          ))}
+        </ol>
       </section>
 
-      <section className="auth__card" aria-labelledby="auth-heading">
+      <section className="auth__sheet" aria-labelledby="auth-heading">
         <div className="tabs" role="tablist" aria-label="Acesso">
           <button
             role="tab"

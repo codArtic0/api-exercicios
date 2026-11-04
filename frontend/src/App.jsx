@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import AddExercise from './components/AddExercise.jsx'
 import AuthScreen from './components/AuthScreen.jsx'
 import BottomNav from './components/BottomNav.jsx'
+import Dashboard from './components/Dashboard.jsx'
 import ExerciseDetail from './components/ExerciseDetail.jsx'
 import Header from './components/Header.jsx'
 import Home from './components/Home.jsx'
@@ -17,8 +18,8 @@ export default function App() {
   const [token, setToken] = useState(() => tokenStorage.get())
   const [user, setUser] = useState(null)
   const [groups, setGroups] = useState([])
-  const [tab, setTab] = useState('exercises')
-  const [group, setGroup] = useState(null) // filtro da home, preservado ao voltar do detalhe
+  const [tab, setTab] = useState('today')
+  const [group, setGroup] = useState(null) // filtro da lista de exercícios, preservado ao voltar do detalhe
   const [exercise, setExercise] = useState(null)
   const [adding, setAdding] = useState(false)
   const [wView, setWView] = useState(LIST) // tela dentro da aba Treinos
@@ -31,7 +32,7 @@ export default function App() {
     setGroup(null)
     setExercise(null)
     setAdding(false)
-    setTab('exercises')
+    setTab('today')
     setWView(LIST)
   }, [])
 
@@ -71,14 +72,20 @@ export default function App() {
     [],
   )
 
+  // Atalhos da aba Hoje: cada um troca de aba e abre a tela certa dentro de Treinos.
+  const goWorkout = (view) => {
+    setTab('workouts')
+    setWView(view)
+  }
+
   if (!token) return <AuthScreen onAuthed={setToken} />
 
   const inWorkouts = tab === 'workouts'
-  const showNav = inWorkouts ? wView.name === 'list' : !exercise && !adding
+  const showNav = tab === 'today' || (inWorkouts ? wView.name === 'list' : !exercise && !adding)
 
   let onBack
   let title
-  if (!inWorkouts && exercise) {
+  if (tab === 'exercises' && exercise) {
     onBack = () => setExercise(null)
     title = 'Exercício'
   } else if (inWorkouts && wView.name !== 'list') {
@@ -90,7 +97,16 @@ export default function App() {
   }
 
   let screen
-  if (!inWorkouts) {
+  if (tab === 'today') {
+    screen = (
+      <Dashboard
+        user={user}
+        onRun={(workout) => goWorkout({ name: 'run', workout })}
+        onNewWorkout={() => goWorkout({ name: 'edit', workout: null, suggestedName: 'Treino A' })}
+        onOpenSession={(session) => goWorkout({ name: 'summary', session, justFinished: false })}
+      />
+    )
+  } else if (tab === 'exercises') {
     screen = exercise ? (
       <ExerciseDetail exercise={exercise} />
     ) : adding ? (
@@ -106,7 +122,6 @@ export default function App() {
       />
     ) : (
       <Home
-        user={user}
         groups={groups}
         group={group}
         onGroupChange={setGroup}
@@ -131,7 +146,7 @@ export default function App() {
         key={wView.workout.id}
         workout={wView.workout}
         groups={groups}
-        onFinished={(session) => setWView({ name: 'summary', session, justFinished: true })}
+        onFinished={(session, planned) => setWView({ name: 'summary', session, planned, justFinished: true })}
       />
     )
   } else if (wView.name === 'summary') {
@@ -139,6 +154,7 @@ export default function App() {
       <SessionSummary
         key={wView.session.id}
         session={wView.session}
+        planned={wView.planned}
         justFinished={wView.justFinished}
         onClose={() => setWView(LIST)}
         onDeleted={() => setWView(LIST)}
@@ -158,7 +174,7 @@ export default function App() {
   return (
     <div className="app">
       <Header onLogout={logout} onBack={onBack} title={title} />
-      <main className={showNav ? 'app__main app__main--nav' : 'app__main'}>{screen}</main>
+      <main className={showNav ? 'screen screen--dock' : 'screen'}>{screen}</main>
       {showNav && <BottomNav tab={tab} onChange={setTab} />}
     </div>
   )
