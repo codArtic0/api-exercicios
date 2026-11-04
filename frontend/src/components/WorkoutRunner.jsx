@@ -3,6 +3,7 @@ import { api, describeError } from '../lib/api.js'
 import { DEFAULT_ICON, GROUP_ICONS } from '../lib/groups.js'
 import { formatClock, formatNumber } from '../lib/stats.js'
 import { fromExercise, fromWorkoutItem, isChanged, sumVolume, validateItems } from '../lib/workout.js'
+import { plannedVolume } from '../lib/week.js'
 import ExercisePicker from './ExercisePicker.jsx'
 import { Check, Clock, Plus } from './Icons.jsx'
 import MiniSteppers from './MiniSteppers.jsx'
@@ -44,7 +45,11 @@ export default function WorkoutRunner({ workout, groups, onFinished }) {
     setBusy(true)
     try {
       const session = await api.finishWorkout(workout.id, { items: payload, startedAt: startedAt.toISOString() })
-      onFinished(session)
+      // O resumo compara o que foi feito com o que o modelo previa (o modelo não muda).
+      onFinished(session, {
+        volume: plannedVolume(workout),
+        byExercise: Object.fromEntries(workout.items.map((i) => [i.exercise.id, i.sets * i.reps * i.weightKg])),
+      })
     } catch (err) {
       setError(describeError(err))
       setBusy(false)
@@ -53,14 +58,16 @@ export default function WorkoutRunner({ workout, groups, onFinished }) {
 
   return (
     <section className="runner">
-      <div className="runner__head">
-        <p className="banner__group">Treino do dia</p>
-        <h1 className="wizard__title">{workout.name}</h1>
-        <p className="runner__clock">
+      <header className="greet runner__head">
+        <div>
+          <p className="micro">Treino do dia</p>
+          <h1 className="title-xl">{workout.name}</h1>
+        </div>
+        <p className="runner__clock num" aria-label="Tempo de treino">
           <Clock />
           {formatClock((now - startedAt.getTime()) / 1000)}
         </p>
-      </div>
+      </header>
 
       <ul className="list">
         {items.map((item, index) => {
@@ -108,7 +115,7 @@ export default function WorkoutRunner({ workout, groups, onFinished }) {
         })}
       </ul>
 
-      <button type="button" className="btn btn--ghost btn--icon" onClick={() => setPicking(true)}>
+      <button type="button" className="btn btn--ghost" onClick={() => setPicking(true)}>
         <Plus size={20} />
         Adicionar exercício extra
       </button>
@@ -124,7 +131,7 @@ export default function WorkoutRunner({ workout, groups, onFinished }) {
           <span>Volume</span>
           <strong>{formatNumber(volume)} kg</strong>
         </div>
-        <button className="btn btn--primary btn--icon" onClick={finish} disabled={busy}>
+        <button className="btn btn--primary" onClick={finish} disabled={busy}>
           <Check size={22} />
           {busy ? 'Salvando…' : 'Finalizar treino'}
         </button>

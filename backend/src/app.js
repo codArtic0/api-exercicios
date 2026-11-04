@@ -8,8 +8,11 @@ const app = express();
 
 app.use(express.json());
 app.use(helmet());
+// CORS_ORIGIN aceita várias origens separadas por vírgula (ex.: localhost e o IP do PC na rede).
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()).filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN,
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }))

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { describeError } from '../lib/api.js'
 import { toText, validateEntry } from '../lib/entry.js'
-import Steppers from './Steppers.jsx'
+import MiniSteppers from './MiniSteppers.jsx'
 
 export default function EntryForm({ initial, onSubmit }) {
   const [values, setValues] = useState({
@@ -38,10 +38,12 @@ export default function EntryForm({ initial, onSubmit }) {
   }
 
   return (
-    <form className="entry-form" onSubmit={submit} noValidate>
-      <h2 className="section-title">Registrar série</h2>
+    <form className="panel entry-form" onSubmit={submit} noValidate>
+      <header className="sec">
+        <h2 className="micro">Registrar série</h2>
+      </header>
 
-      <Steppers values={values} onChange={change} />
+      <MiniSteppers idPrefix="entry" values={values} onChange={change} />
 
       {error && (
         <p className="alert" role="alert">
@@ -50,11 +52,11 @@ export default function EntryForm({ initial, onSubmit }) {
       )}
       {saved && (
         <p className="success" role="status">
-          Série registrada!
+          Série registrada.
         </p>
       )}
 
-      <button className="btn btn--accent" disabled={busy}>
+      <button className="btn btn--primary" disabled={busy}>
         {busy ? 'Salvando…' : 'Registrar série'}
       </button>
     </form>

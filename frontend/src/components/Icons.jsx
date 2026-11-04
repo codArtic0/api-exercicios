@@ -143,3 +143,11 @@ export const Clipboard = ({ size = 22, ...props }) => (
     <path d="M9 4V3h6v1M9 11h6M9 15h6" />
   </svg>
 )
+
+export const Target = ({ size = 22, ...props }) => (
+  <svg {...base} width={size} height={size} {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="4.5" />
+    <path d="M12 1.5V5M12 19v3.5M1.5 12H5M19 12h3.5" />
+  </svg>
+)

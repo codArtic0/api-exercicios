@@ -3,7 +3,7 @@ import { api, describeError } from '../lib/api.js'
 import { DEFAULT_VALUES, validateEntry } from '../lib/entry.js'
 import GroupPicker from './GroupPicker.jsx'
 import { Check, ChevronLeft, ChevronRight } from './Icons.jsx'
-import Steppers from './Steppers.jsx'
+import MiniSteppers from './MiniSteppers.jsx'
 
 const TOTAL_STEPS = 3
 
@@ -165,7 +165,7 @@ export default function AddExercise({ groups, initialGroup, onGroupCreated, onCl
             <span>Registrar a primeira série agora</span>
           </label>
 
-          {withSeries && <Steppers idPrefix="new" values={series} onChange={(k, v) => setSeries((s) => ({ ...s, [k]: v }))} />}
+          {withSeries && <MiniSteppers idPrefix="new" values={series} onChange={(k, v) => setSeries((s) => ({ ...s, [k]: v }))} />}
 
           {error && (
             <p className="alert" role="alert">
@@ -178,7 +178,7 @@ export default function AddExercise({ groups, initialGroup, onGroupCreated, onCl
               Abrir exercício
             </button>
           ) : (
-            <button className="btn btn--accent btn--icon" disabled={busy}>
+            <button className="btn btn--accent" disabled={busy}>
               <Check size={22} />
               {busy ? 'Salvando…' : 'Adicionar exercício'}
             </button>
@@ -193,7 +193,7 @@ export default function AddExercise({ groups, initialGroup, onGroupCreated, onCl
               {error}
             </p>
           )}
-          <button className="btn btn--primary btn--icon" type="button" onClick={goNext}>
+          <button className="btn btn--primary" type="button" onClick={goNext}>
             Continuar
             <ChevronRight size={22} />
           </button>

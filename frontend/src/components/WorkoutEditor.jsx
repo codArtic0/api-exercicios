@@ -135,7 +135,7 @@ export default function WorkoutEditor({ workout, suggestedName, groups, onSaved,
         })}
       </ul>
 
-      <button type="button" className="btn btn--ghost btn--icon" onClick={() => setPicking(true)}>
+      <button type="button" className="btn btn--ghost" onClick={() => setPicking(true)}>
         <Plus size={20} />
         Adicionar exercício
       </button>
@@ -146,13 +146,13 @@ export default function WorkoutEditor({ workout, suggestedName, groups, onSaved,
         </p>
       )}
 
-      <button className="btn btn--primary btn--icon" disabled={busy}>
+      <button className="btn btn--primary" disabled={busy}>
         <Check size={22} />
         {busy ? 'Salvando…' : 'Salvar treino'}
       </button>
 
       {editing && (
-        <button type="button" className="btn btn--danger btn--icon" onClick={removeWorkout} disabled={busy}>
+        <button type="button" className="btn btn--danger" onClick={removeWorkout} disabled={busy}>
           <Trash size={20} />
           Excluir treino
         </button>
