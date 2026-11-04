@@ -16,8 +16,8 @@ export async function create(userId, { name, primaryGroupId, relatedGroupIds }) 
     throw new AppError(400, 'GROUP_NOT_FOUND', 'Grupo muscular não encontrado');
   }
 
-  if (await exerciseRepository.findOwnedByName(name, userId)) {
-    throw new AppError(409, 'EXERCISE_EXISTS', 'Você já tem um exercício com esse nome');
+  if (await exerciseRepository.findVisibleByName(name, userId)) {
+    throw new AppError(409, 'EXERCISE_EXISTS', 'Já existe um exercício com esse nome');
   }
 
   return exerciseRepository.create({

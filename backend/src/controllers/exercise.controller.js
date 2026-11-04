@@ -1,6 +1,6 @@
 import * as exerciseService from '../services/exercise.service.js';
 
-const toResponse = ({ id, name, primaryGroup, related, entries }) => {
+const toResponse = ({ id, name, primaryGroup, related, entries, createdById }) => {
   const last = entries[0];
   return {
     id,
@@ -10,6 +10,8 @@ const toResponse = ({ id, name, primaryGroup, related, entries }) => {
     lastEntry: last
       ? { sets: last.sets, reps: last.reps, weightKg: last.weightKg, performedAt: last.performedAt }
       : null,
+    // true = exercício padrão (de todos); false = criado pelo próprio usuário (só dele).
+    isCatalog: createdById === null,
   };
 };
 

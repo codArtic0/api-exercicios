@@ -4,8 +4,8 @@ import jwt from 'jsonwebtoken';
 
 vi.mock('../configs/prisma.js', () => ({ default: {} }));
 vi.mock('../repositories/exercise.repository.js', () => ({
-  findOwnedById: vi.fn(),
-  findOwnedByName: vi.fn(),
+  findVisibleById: vi.fn(),
+  findVisibleByName: vi.fn(),
   list: vi.fn(),
   create: vi.fn(),
 }));
@@ -56,7 +56,7 @@ describe('POST /exercises', () => {
 
   it('201 cria o exercício do usuário com os grupos relacionados', async () => {
     muscleGroupRepository.findByIds.mockResolvedValue([{ id: PERNA }, { id: QUAD }]);
-    exerciseRepository.findOwnedByName.mockResolvedValue(null);
+    exerciseRepository.findVisibleByName.mockResolvedValue(null);
     exerciseRepository.create.mockResolvedValue(created());
 
     const res = await request(app).post('/exercises').set('Authorization', token()).send(body);
@@ -68,6 +68,7 @@ describe('POST /exercises', () => {
       primaryGroup: { id: PERNA, name: 'Perna' },
       relatedGroups: [{ id: QUAD, name: 'Quadríceps' }],
       lastEntry: null,
+      isCatalog: false,
     });
     expect(exerciseRepository.create).toHaveBeenCalledWith({
       name: 'Cadeira extensora',
@@ -79,7 +80,7 @@ describe('POST /exercises', () => {
 
   it('o dono vem do token, nunca do body', async () => {
     muscleGroupRepository.findByIds.mockResolvedValue([{ id: PERNA }]);
-    exerciseRepository.findOwnedByName.mockResolvedValue(null);
+    exerciseRepository.findVisibleByName.mockResolvedValue(null);
     exerciseRepository.create.mockResolvedValue(created());
 
     await request(app)
@@ -92,7 +93,7 @@ describe('POST /exercises', () => {
 
   it('relatedGroupIds é opcional', async () => {
     muscleGroupRepository.findByIds.mockResolvedValue([{ id: PERNA }]);
-    exerciseRepository.findOwnedByName.mockResolvedValue(null);
+    exerciseRepository.findVisibleByName.mockResolvedValue(null);
     exerciseRepository.create.mockResolvedValue(created({ related: [] }));
 
     const res = await request(app)
@@ -106,7 +107,7 @@ describe('POST /exercises', () => {
 
   it('remove repetidos e o grupo principal dos relacionados', async () => {
     muscleGroupRepository.findByIds.mockResolvedValue([{ id: PERNA }, { id: QUAD }, { id: OMBRO }]);
-    exerciseRepository.findOwnedByName.mockResolvedValue(null);
+    exerciseRepository.findVisibleByName.mockResolvedValue(null);
     exerciseRepository.create.mockResolvedValue(created());
 
     await request(app)
@@ -128,14 +129,15 @@ describe('POST /exercises', () => {
     expect(exerciseRepository.create).not.toHaveBeenCalled();
   });
 
-  it('409 EXERCISE_EXISTS quando o nome já existe para o usuário', async () => {
+  it('409 EXERCISE_EXISTS quando o nome já existe entre os exercícios visíveis ao usuário', async () => {
     muscleGroupRepository.findByIds.mockResolvedValue([{ id: PERNA }, { id: QUAD }]);
-    exerciseRepository.findOwnedByName.mockResolvedValue({ id: 'ex-1' });
+    exerciseRepository.findVisibleByName.mockResolvedValue({ id: 'ex-1' });
 
-    const res = await request(app).post('/exercises').set('Authorization', token()).send(body);
+    const res = await request(app).post('/exercises').set('Authorization', token('user-1')).send(body);
 
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('EXERCISE_EXISTS');
+    expect(exerciseRepository.findVisibleByName).toHaveBeenCalledWith('Cadeira extensora', 'user-1');
     expect(exerciseRepository.create).not.toHaveBeenCalled();
   });
 

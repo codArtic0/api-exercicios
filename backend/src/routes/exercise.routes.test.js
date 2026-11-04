@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 
 vi.mock('../configs/prisma.js', () => ({ default: {} }));
 vi.mock('../repositories/exercise.repository.js', () => ({
-  findOwnedById: vi.fn(),
+  findVisibleById: vi.fn(),
   list: vi.fn(),
 }));
 vi.mock('../repositories/entry.repository.js', () => ({
@@ -42,7 +42,7 @@ describe('POST /exercises/:id/entries', () => {
 
   it('201 registra a série e não devolve o userId', async () => {
     const performedAt = new Date('2026-11-03T18:30:00Z');
-    exerciseRepository.findOwnedById.mockResolvedValue({ id: exerciseId });
+    exerciseRepository.findVisibleById.mockResolvedValue({ id: exerciseId });
     entryRepository.create.mockResolvedValue({
       id: 'e-1',
       userId: 'user-1',
@@ -64,7 +64,7 @@ describe('POST /exercises/:id/entries', () => {
   });
 
   it('o userId vem do token, nunca do body', async () => {
-    exerciseRepository.findOwnedById.mockResolvedValue({ id: exerciseId });
+    exerciseRepository.findVisibleById.mockResolvedValue({ id: exerciseId });
     entryRepository.create.mockResolvedValue({ id: 'e-1', exerciseId, ...body });
 
     await request(app)
@@ -78,7 +78,7 @@ describe('POST /exercises/:id/entries', () => {
   });
 
   it('404 quando o exercício não é visível ao usuário', async () => {
-    exerciseRepository.findOwnedById.mockResolvedValue(null);
+    exerciseRepository.findVisibleById.mockResolvedValue(null);
 
     const res = await request(app).post(url).set('Authorization', token()).send(body);
 
@@ -120,7 +120,7 @@ describe('GET /exercises/:id/entries', () => {
   });
 
   it('200 devolve o histórico do usuário na ordem do repository', async () => {
-    exerciseRepository.findOwnedById.mockResolvedValue({ id: exerciseId });
+    exerciseRepository.findVisibleById.mockResolvedValue({ id: exerciseId });
     entryRepository.listByUserAndExercise.mockResolvedValue([
       { id: 'e-1', userId: 'user-1', exerciseId, sets: 3, reps: 12, weightKg: 80, performedAt: new Date('2026-11-01') },
       { id: 'e-2', userId: 'user-1', exerciseId, sets: 3, reps: 10, weightKg: 90, performedAt: new Date('2026-11-03') },
@@ -135,7 +135,7 @@ describe('GET /exercises/:id/entries', () => {
   });
 
   it('200 com lista vazia quando não há registros', async () => {
-    exerciseRepository.findOwnedById.mockResolvedValue({ id: exerciseId });
+    exerciseRepository.findVisibleById.mockResolvedValue({ id: exerciseId });
     entryRepository.listByUserAndExercise.mockResolvedValue([]);
 
     const res = await request(app).get(url).set('Authorization', token());
@@ -145,7 +145,7 @@ describe('GET /exercises/:id/entries', () => {
   });
 
   it('404 quando o exercício não é visível ao usuário', async () => {
-    exerciseRepository.findOwnedById.mockResolvedValue(null);
+    exerciseRepository.findVisibleById.mockResolvedValue(null);
 
     const res = await request(app).get(url).set('Authorization', token());
 
@@ -186,22 +186,36 @@ describe('GET /exercises', () => {
         primaryGroup: { id: 'g-1', name: 'Perna' },
         relatedGroups: [{ id: 'g-2', name: 'Quadríceps' }],
         lastEntry: null,
+        isCatalog: true,
       },
     ]);
   });
 
-  it('a listagem é sempre do usuário do token, e a resposta não expõe o dono', async () => {
+  it('a listagem é pedida com o usuário do token, e a resposta não expõe o dono', async () => {
     exerciseRepository.list.mockResolvedValue([{ ...squat, createdById: 'user-1' }]);
 
     const res = await request(app).get('/exercises').set('Authorization', token('user-1'));
 
     expect(exerciseRepository.list).toHaveBeenCalledWith('user-1', { group: undefined, q: undefined });
     expect(res.body[0]).not.toHaveProperty('createdById');
-    expect(res.body[0]).not.toHaveProperty('isCatalog');
+  });
+
+  it('isCatalog separa o exercício padrão do exercício próprio', async () => {
+    exerciseRepository.list.mockResolvedValue([
+      squat,
+      { ...squat, id: 'ex-2', name: 'Minha rosca', createdById: 'user-1' },
+    ]);
+
+    const res = await request(app).get('/exercises').set('Authorization', token('user-1'));
+
+    expect(res.body.map((e) => [e.name, e.isCatalog])).toEqual([
+      ['Leg Press', true],
+      ['Minha rosca', false],
+    ]);
   });
 
   it('exercício de outro usuário: 404 ao registrar e ao consultar o histórico', async () => {
-    exerciseRepository.findOwnedById.mockResolvedValue(null);
+    exerciseRepository.findVisibleById.mockResolvedValue(null);
 
     const post = await request(app)
       .post(url)
@@ -211,7 +225,7 @@ describe('GET /exercises', () => {
 
     expect(post.status).toBe(404);
     expect(get.status).toBe(404);
-    expect(exerciseRepository.findOwnedById).toHaveBeenCalledWith(exerciseId, 'user-2');
+    expect(exerciseRepository.findVisibleById).toHaveBeenCalledWith(exerciseId, 'user-2');
     expect(entryRepository.create).not.toHaveBeenCalled();
   });
 
