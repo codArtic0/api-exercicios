@@ -6,6 +6,10 @@ import { notFound, errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
 
+// Atrás do proxy do Render/Vercel o IP real vem em X-Forwarded-For; sem isso o rate limit
+// contaria o IP do proxy (todos os usuários juntos).
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(helmet());
 // CORS_ORIGIN aceita várias origens separadas por vírgula (ex.: localhost e o IP do PC na rede).
