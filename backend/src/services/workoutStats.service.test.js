@@ -1,0 +1,94 @@
+import { describe, it, expect } from 'vitest';
+import { compareWithPrevious, computeSessionStats, itemVolume } from './workoutStats.service.js';
+
+const item = (name, sets, reps, weightKg) => ({
+  exerciseId: `id-${name}`,
+  exerciseName: name,
+  sets,
+  reps,
+  weightKg,
+});
+
+describe('itemVolume', () => {
+  it('peso × repetições × séries (o exemplo do diagrama: 90 × 12 × 3 = 3240)', () => {
+    expect(itemVolume({ sets: 3, reps: 12, weightKg: 90 })).toBe(3240);
+  });
+
+  it('arredonda para uma casa decimal', () => {
+    expect(itemVolume({ sets: 3, reps: 10, weightKg: 22.5 })).toBe(675);
+    expect(itemVolume({ sets: 1, reps: 7, weightKg: 1.1 })).toBe(7.7);
+  });
+});
+
+describe('computeSessionStats', () => {
+  const items = [item('Agachamento', 3, 8, 70), item('Leg press', 2, 10, 120), item('Extensora', 3, 15, 40)];
+
+  it('soma volume, séries, repetições e conta os exercícios', () => {
+    const stats = computeSessionStats(items);
+
+    // 1680 + 2400 + 1800
+    expect(stats.totalVolume).toBe(5880);
+    expect(stats.totalSets).toBe(8);
+    expect(stats.totalReps).toBe(24 + 20 + 45);
+    expect(stats.exerciseCount).toBe(3);
+  });
+
+  it('melhor exercício é o de maior volume', () => {
+    expect(computeSessionStats(items).bestExercise).toEqual({
+      exerciseId: 'id-Leg press',
+      name: 'Leg press',
+      volume: 2400,
+    });
+  });
+
+  it('mais pesado é o de maior carga, que pode ser outro exercício', () => {
+    const stats = computeSessionStats([item('A', 5, 10, 50), item('B', 1, 3, 100)]);
+
+    expect(stats.bestExercise.name).toBe('A');
+    expect(stats.heaviest).toEqual({ exerciseId: 'id-B', name: 'B', weightKg: 100 });
+  });
+
+  it('em empate vale o primeiro da lista', () => {
+    const stats = computeSessionStats([item('A', 2, 10, 50), item('B', 2, 10, 50)]);
+
+    expect(stats.bestExercise.name).toBe('A');
+    expect(stats.heaviest.name).toBe('A');
+  });
+
+  it('um exercício só', () => {
+    const stats = computeSessionStats([item('A', 3, 12, 90)]);
+
+    expect(stats.totalVolume).toBe(3240);
+    expect(stats.bestExercise.name).toBe('A');
+    expect(stats.exerciseCount).toBe(1);
+  });
+
+  it('lista vazia: tudo zerado e sem destaque', () => {
+    expect(computeSessionStats([])).toEqual({
+      totalVolume: 0,
+      totalSets: 0,
+      totalReps: 0,
+      exerciseCount: 0,
+      bestExercise: null,
+      heaviest: null,
+    });
+  });
+});
+
+describe('compareWithPrevious', () => {
+  it('devolve o volume anterior e a variação em %', () => {
+    expect(compareWithPrevious(6800, 4080)).toEqual({ totalVolume: 4080, deltaPct: 66.7 });
+  });
+
+  it('variação negativa quando o volume caiu', () => {
+    expect(compareWithPrevious(900, 1000)).toEqual({ totalVolume: 1000, deltaPct: -10 });
+  });
+
+  it('volume igual: 0%', () => {
+    expect(compareWithPrevious(1000, 1000).deltaPct).toBe(0);
+  });
+
+  it.each([null, undefined, 0])('sem comparação quando o anterior é %s', (previous) => {
+    expect(compareWithPrevious(1000, previous)).toBeNull();
+  });
+});
