@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { api, describeError } from '../lib/api.js'
-import { DEFAULT_ICON, GROUP_ICONS, GROUPS } from '../lib/groups.js'
+import { DEFAULT_ICON, GROUP_ICONS } from '../lib/groups.js'
+import { formatNumber } from '../lib/stats.js'
 import { useDebounced } from '../lib/useDebounced.js'
-import { ChevronRight, Dumbbell, Search } from './Icons.jsx'
+import { ChevronRight, Dumbbell, Plus, Search } from './Icons.jsx'
 
-export default function Home({ user, onOpen }) {
-  const [group, setGroup] = useState(null)
+export default function Home({ user, groups, group, onGroupChange, onOpen, onAdd }) {
   const [search, setSearch] = useState('')
   const q = useDebounced(search.trim(), 300)
 
@@ -34,25 +34,24 @@ export default function Home({ user, onOpen }) {
       </section>
 
       <div className="chips" role="group" aria-label="Grupo muscular">
-        <button
-          className="chip"
-          aria-pressed={group === null}
-          onClick={() => setGroup(null)}
-        >
+        <button className="chip" aria-pressed={group === null} onClick={() => onGroupChange(null)}>
           <Dumbbell size={18} />
           Todos
         </button>
-        {GROUPS.map(({ name, Icon }) => (
-          <button
-            key={name}
-            className="chip"
-            aria-pressed={group === name}
-            onClick={() => setGroup(group === name ? null : name)}
-          >
-            <Icon size={18} />
-            {name}
-          </button>
-        ))}
+        {groups.map(({ id, name }) => {
+          const Icon = GROUP_ICONS[name] ?? DEFAULT_ICON
+          return (
+            <button
+              key={id}
+              className="chip"
+              aria-pressed={group === name}
+              onClick={() => onGroupChange(group === name ? null : name)}
+            >
+              <Icon size={18} />
+              {name}
+            </button>
+          )
+        })}
       </div>
 
       <label className="search">
@@ -93,23 +92,29 @@ export default function Home({ user, onOpen }) {
               Nenhum exercício {group ? `em ${group}` : 'encontrado'}
               {q ? ` para “${q}”` : ''}.
             </p>
-            <small>Por enquanto, só o catálogo de Perna está cadastrado.</small>
+            <small>Toque no + para adicionar um exercício.</small>
           </div>
         )}
 
         {!loading && !result.error && result.items.length > 0 && (
           <ul className="list">
-            {result.items.map((ex) => {
+            {result.items.map((ex, i) => {
               const Icon = GROUP_ICONS[ex.primaryGroup.name] ?? DEFAULT_ICON
+              const groupsLabel = [ex.primaryGroup.name, ...ex.relatedGroups.map((g) => g.name)].join(' · ')
               return (
-                <li key={ex.id}>
+                <li key={ex.id} style={{ '--i': Math.min(i, 8) }}>
                   <button className="card" onClick={() => onOpen(ex)}>
                     <span className="card__icon">
                       <Icon size={26} />
                     </span>
                     <span className="card__body">
                       <strong>{ex.name}</strong>
-                      <small>{ex.primaryGroup.name}</small>
+                      <span className="card__last">
+                        {ex.lastEntry
+                          ? `${formatNumber(ex.lastEntry.weightKg)} kg · ${ex.lastEntry.sets} séries de ${ex.lastEntry.reps} repetições`
+                          : 'Sem registros ainda'}
+                      </span>
+                      <small>{groupsLabel}</small>
                     </span>
                     <ChevronRight />
                   </button>
@@ -119,6 +124,10 @@ export default function Home({ user, onOpen }) {
           </ul>
         )}
       </section>
+
+      <button className="fab" onClick={() => onAdd(group)} aria-label="Adicionar exercício">
+        <Plus size={30} />
+      </button>
     </>
   )
 }

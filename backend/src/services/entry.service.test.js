@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../repositories/exercise.repository.js', () => ({ findVisibleById: vi.fn() }));
+vi.mock('../repositories/exercise.repository.js', () => ({ findOwnedById: vi.fn() }));
 vi.mock('../repositories/entry.repository.js', () => ({
   create: vi.fn(),
   listByUserAndExercise: vi.fn(),
@@ -14,7 +14,7 @@ beforeEach(() => vi.resetAllMocks());
 
 describe('entry.service.create', () => {
   it('grava com o userId e o exerciseId recebidos, ignorando os do body', async () => {
-    exerciseRepository.findVisibleById.mockResolvedValue({ id: 'ex-1' });
+    exerciseRepository.findOwnedById.mockResolvedValue({ id: 'ex-1' });
     entryRepository.create.mockResolvedValue({ id: 'e-1' });
 
     await entryService.create('user-1', 'ex-1', {
@@ -25,7 +25,7 @@ describe('entry.service.create', () => {
       exerciseId: 'outro',
     });
 
-    expect(exerciseRepository.findVisibleById).toHaveBeenCalledWith('ex-1', 'user-1');
+    expect(exerciseRepository.findOwnedById).toHaveBeenCalledWith('ex-1', 'user-1');
     expect(entryRepository.create).toHaveBeenCalledWith({
       sets: 3,
       reps: 12,
@@ -36,7 +36,7 @@ describe('entry.service.create', () => {
   });
 
   it('exercício invisível ao usuário → 404 e nada é gravado', async () => {
-    exerciseRepository.findVisibleById.mockResolvedValue(null);
+    exerciseRepository.findOwnedById.mockResolvedValue(null);
 
     await expect(
       entryService.create('user-1', 'ex-1', { sets: 1, reps: 1, weightKg: 1 }),
@@ -47,7 +47,7 @@ describe('entry.service.create', () => {
 
 describe('entry.service.listByExercise', () => {
   it('lista só os registros do usuário', async () => {
-    exerciseRepository.findVisibleById.mockResolvedValue({ id: 'ex-1' });
+    exerciseRepository.findOwnedById.mockResolvedValue({ id: 'ex-1' });
     entryRepository.listByUserAndExercise.mockResolvedValue([{ id: 'e-1' }]);
 
     const result = await entryService.listByExercise('user-1', 'ex-1');
@@ -57,7 +57,7 @@ describe('entry.service.listByExercise', () => {
   });
 
   it('exercício invisível → 404 e não consulta o histórico', async () => {
-    exerciseRepository.findVisibleById.mockResolvedValue(null);
+    exerciseRepository.findOwnedById.mockResolvedValue(null);
 
     await expect(entryService.listByExercise('user-1', 'ex-1')).rejects.toMatchObject({
       status: 404,

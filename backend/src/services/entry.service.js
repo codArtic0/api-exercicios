@@ -3,7 +3,7 @@ import * as exerciseRepository from '../repositories/exercise.repository.js';
 import * as entryRepository from '../repositories/entry.repository.js';
 
 async function assertExerciseVisible(userId, exerciseId) {
-  const exercise = await exerciseRepository.findVisibleById(exerciseId, userId);
+  const exercise = await exerciseRepository.findOwnedById(exerciseId, userId);
   if (!exercise) {
     throw new AppError(404, 'EXERCISE_NOT_FOUND', 'Exercício não encontrado');
   }
