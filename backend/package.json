@@ -6,12 +6,17 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
+    "express-rate-limit": "^8.7.3",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
+    "prisma": "^6.19.3",
     "zod": "^4.6.7"
   },
   "scripts": {
     "start": "node src/server.js",
+    "build": "prisma generate --schema src/models/schema.prisma",
+    "db:deploy": "prisma migrate deploy --schema src/models/schema.prisma",
+    "start:prod": "npm run db:deploy && node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "vitest run",
     "db:migrate": "prisma migrate dev --schema src/models/schema.prisma",
@@ -20,8 +25,10 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
-    "prisma": "^6.19.3",
     "supertest": "^7.3.1",
     "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
