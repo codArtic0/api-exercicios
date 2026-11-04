@@ -87,13 +87,21 @@ export const api = {
     const query = params.toString()
     return request(`/exercises${query ? `?${query}` : ''}`)
   },
+  listWorkouts: () => request('/workouts'),
+  createWorkout: (body) => request('/workouts', { method: 'POST', body }),
+  updateWorkout: (id, body) => request(`/workouts/${id}`, { method: 'PUT', body }),
+  deleteWorkout: (id) => request(`/workouts/${id}`, { method: 'DELETE' }),
+  finishWorkout: (id, body) => request(`/workouts/${id}/sessions`, { method: 'POST', body }),
+  listSessions: (limit = 10) => request(`/sessions?limit=${limit}`),
+  deleteSession: (id) => request(`/sessions/${id}`, { method: 'DELETE' }),
   listEntries: (exerciseId) => request(`/exercises/${exerciseId}/entries`),
   createEntry: (exerciseId, body) =>
     request(`/exercises/${exerciseId}/entries`, { method: 'POST', body }),
 }
 
 const FIELD_MESSAGES = {
-  name: 'Informe seu nome.',
+  name: 'Informe um nome válido.',
+  items: 'Confira os exercícios do treino: de 1 a 30, sem repetir nenhum.',
   email: 'Email inválido.',
   password: 'A senha precisa ter de 8 a 72 caracteres.',
   sets: 'Séries: use um número inteiro de 1 a 50.',

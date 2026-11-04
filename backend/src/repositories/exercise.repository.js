@@ -14,6 +14,9 @@ const withDetails = (userId) => ({
 export const findVisibleById = (id, userId) =>
   prisma.exercise.findFirst({ where: { id, ...visibleTo(userId) } });
 
+export const findVisibleByIds = (ids, userId) =>
+  prisma.exercise.findMany({ where: { id: { in: ids }, ...visibleTo(userId) } });
+
 export const findVisibleByName = (name, userId) =>
   prisma.exercise.findFirst({
     where: { name: { equals: name, mode: 'insensitive' }, ...visibleTo(userId) },

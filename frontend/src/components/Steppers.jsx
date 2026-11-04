@@ -1,17 +1,7 @@
-import { ENTRY_FIELDS, parseNumber, toText } from '../lib/entry.js'
+import { ENTRY_FIELDS, bumpValue } from '../lib/entry.js'
 import { Minus, Plus } from './Icons.jsx'
 
 export default function Steppers({ values, onChange, idPrefix = 'f' }) {
-  const bump = (field, direction) => {
-    const current = parseNumber(values[field.key])
-    const base = Number.isFinite(current) ? current : 0
-    const next = Math.min(
-      field.max,
-      Math.max(field.min, Math.round((base + direction * field.step) * 10) / 10),
-    )
-    onChange(field.key, toText(next))
-  }
-
   return (
     <div className="steppers">
       {ENTRY_FIELDS.map((field) => (
@@ -21,7 +11,7 @@ export default function Steppers({ values, onChange, idPrefix = 'f' }) {
             <button
               type="button"
               className="stepper__btn"
-              onClick={() => bump(field, -1)}
+              onClick={() => onChange(field.key, bumpValue(field, values[field.key], -1))}
               aria-label={`Diminuir ${field.label}`}
             >
               <Minus />
@@ -36,7 +26,7 @@ export default function Steppers({ values, onChange, idPrefix = 'f' }) {
             <button
               type="button"
               className="stepper__btn"
-              onClick={() => bump(field, 1)}
+              onClick={() => onChange(field.key, bumpValue(field, values[field.key], 1))}
               aria-label={`Aumentar ${field.label}`}
             >
               <Plus />
