@@ -1,6 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import prisma from './configs/prisma.js';
 import routes from './routes/index.js';
 import { notFound, errorHandler } from './middlewares/error.middleware.js';
 
@@ -21,10 +22,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }))
 
-app.get('/health', (req, res) => {
-  return res.status(200).json({
-    message: "Saudável"
-  })
+// Usado pelo Render para saber se a API está viva: confirma também que o banco responde.
+app.get('/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return res.status(200).json({ message: 'Saudável' });
+  } catch (err) {
+    console.error('Health check: banco indisponível', err.message);
+    return res.status(503).json({
+      error: { code: 'DB_UNAVAILABLE', message: 'Banco de dados indisponível', details: null },
+    });
+  }
 });
 
 app.use(routes);

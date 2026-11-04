@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 
-vi.mock('./configs/prisma.js', () => ({ default: {} }));
+const queryRaw = vi.fn();
+vi.mock('./configs/prisma.js', () => ({ default: { $queryRaw: (...args) => queryRaw(...args) } }));
 
 const ORIGIN = 'http://localhost:5173';
 let app;
@@ -12,11 +13,29 @@ beforeAll(async () => {
 });
 
 describe('GET /health', () => {
+  beforeEach(() => queryRaw.mockResolvedValue([{ '?column?': 1 }]));
+
   it('responde 200 com a mensagem de saúde', async () => {
     const res = await request(app).get('/health');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ message: 'Saudável' });
+  });
+});
+
+describe('GET /health com o banco fora do ar', () => {
+  it('responde 503 no formato padrão sem vazar detalhes', async () => {
+    queryRaw.mockRejectedValue(new Error('connect ECONNREFUSED 10.0.0.1:5432'));
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const res = await request(app).get('/health');
+
+    expect(res.status).toBe(503);
+    expect(res.body).toEqual({
+      error: { code: 'DB_UNAVAILABLE', message: 'Banco de dados indisponível', details: null },
+    });
+    expect(JSON.stringify(res.body)).not.toMatch(/ECONNREFUSED|10\.0\.0\.1/);
+    spy.mockRestore();
   });
 });
 
