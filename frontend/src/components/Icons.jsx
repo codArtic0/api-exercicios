@@ -87,3 +87,9 @@ export const LogOut = ({ size = 20, ...props }) => (
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
   </svg>
 )
+
+export const Check = ({ size = 22, ...props }) => (
+  <svg {...base} width={size} height={size} {...props}>
+    <path d="m5 12.5 4.5 4.5L19 7.5" />
+  </svg>
+)

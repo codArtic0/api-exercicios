@@ -16,6 +16,7 @@ const DEFAULTS = { sets: 3, reps: 12, weightKg: 20 }
 
 export default function ExerciseDetail({ exercise }) {
   const [state, setState] = useState({ id: null, entries: [], error: '' })
+  const [metric, setMetric] = useState('weight')
 
   useEffect(() => {
     let cancelled = false
@@ -46,7 +47,9 @@ export default function ExerciseDetail({ exercise }) {
           <Icon size={30} />
         </span>
         <div>
-          <p className="banner__group">{exercise.primaryGroup.name}</p>
+          <p className="banner__group">
+            {[exercise.primaryGroup.name, ...(exercise.relatedGroups ?? []).map((g) => g.name)].join(', ')}
+          </p>
           <h1 className="banner__title">{exercise.name}</h1>
         </div>
       </section>
@@ -69,7 +72,23 @@ export default function ExerciseDetail({ exercise }) {
             <Tile label="Volume máx." value={stats ? formatNumber(stats.maxVolume) : '—'} unit="kg" />
           </section>
 
-          <WeightChart entries={entries} />
+          <div className="segmented" role="radiogroup" aria-label="Métrica do gráfico">
+            {[
+              ['weight', 'Peso (kg)'],
+              ['volume', 'Volume (kg)'],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                role="radio"
+                aria-checked={metric === value}
+                className="segmented__btn"
+                onClick={() => setMetric(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <WeightChart key={metric} entries={entries} metric={metric} />
 
           <EntryForm
             initial={last ? { sets: last.sets, reps: last.reps, weightKg: last.weightKg } : DEFAULTS}
@@ -88,8 +107,8 @@ export default function ExerciseDetail({ exercise }) {
               </div>
             ) : (
               <ul className="history">
-                {[...entries].reverse().map((e) => (
-                  <li key={e.id} className="history__item">
+                {[...entries].reverse().map((e, i) => (
+                  <li key={e.id} className="history__item" style={{ '--i': Math.min(i, 8) }}>
                     <div>
                       <strong>
                         {e.sets} × {e.reps} · {formatNumber(e.weightKg)} kg

@@ -77,6 +77,9 @@ export const api = {
   register: (body) => request('/auth/register', { method: 'POST', body, auth: false }),
   login: (body) => request('/auth/login', { method: 'POST', body, auth: false }),
   me: () => request('/auth/me'),
+  listGroups: () => request('/muscle-groups'),
+  createGroup: (body) => request('/muscle-groups', { method: 'POST', body }),
+  createExercise: (body) => request('/exercises', { method: 'POST', body }),
   listExercises: ({ group, q } = {}) => {
     const params = new URLSearchParams()
     if (group) params.set('group', group)
