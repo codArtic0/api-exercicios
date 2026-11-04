@@ -1,0 +1,553 @@
+/* =====================================================================
+   Telas de treino: dock, painel Hoje, modelos, execução do dia, resumo e seletor.
+   Usa os tokens e animações de index.css.
+   ===================================================================== */
+
+/* ---------- dock flutuante ---------- */
+.dock {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px calc(14px + env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+.dock__inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: min(100%, 420px);
+  padding: 5px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: rgba(10, 14, 20, 0.8);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+.dock__pill {
+  position: absolute;
+  inset: 5px auto 5px 5px;
+  width: calc((100% - 10px) / 3);
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  transform: translateX(calc(var(--idx, 0) * 100%));
+  transition: transform 0.45s var(--ease);
+}
+.dock__tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 46px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.3s var(--ease);
+}
+.dock__tab[aria-current='page'] {
+  color: var(--accent-hi);
+}
+
+/* ---------- painel Hoje ---------- */
+.next {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+.next__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.next__name {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 1.35rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.next__meta {
+  margin-top: 2px;
+  color: var(--accent-hi);
+  font-size: 0.8rem;
+}
+.next__list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+}
+.next__list li span:first-child {
+  min-width: 0;
+}
+.next__list .num {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.next__list .next__more {
+  justify-content: flex-start;
+}
+.next--empty {
+  gap: 12px;
+}
+
+/* ---------- modelos ---------- */
+.workout {
+  display: grid;
+  gap: 12px;
+}
+.workout__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.workout__id {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.workout__name {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+}
+.workout__meta {
+  color: var(--accent-hi);
+  font-size: 0.78rem;
+}
+.workout__list {
+  display: block;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+.workout__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- itens do treino (editor e execução) ---------- */
+.editor,
+.runner {
+  display: grid;
+  gap: 16px;
+}
+.item {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  transition:
+    opacity 0.3s var(--ease),
+    border-color 0.3s var(--ease);
+}
+.item--off {
+  opacity: 0.45;
+  border-style: dashed;
+}
+.item__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.item__head .card__body {
+  flex: 1;
+}
+.item__actions {
+  display: flex;
+  gap: 2px;
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--accent-hi);
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.item--off .toggle {
+  color: var(--muted);
+}
+
+/* ---------- execução do treino ---------- */
+.runner__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.runner__clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-hi);
+  font-size: 1rem;
+  font-weight: 500;
+}
+.runner__bar {
+  position: sticky;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 5;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 10px 10px 10px 18px;
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  background: rgba(10, 14, 20, 0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+.runner__total {
+  display: grid;
+  line-height: 1.15;
+}
+.runner__total strong {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.runner__total span {
+  color: var(--muted);
+  font-family: var(--f-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.runner__bar .btn {
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+/* ---------- resumo do treino ---------- */
+.hero {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 26px 16px 24px;
+  text-align: center;
+}
+.hero__num {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: clamp(3rem, 17vw, 4.4rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--text);
+  text-shadow: 0 0 36px rgba(34, 184, 255, 0.35);
+}
+.hero__num small {
+  color: var(--muted);
+  font-family: var(--f-mono);
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+.delta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 5px 12px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.delta--up {
+  border-color: rgba(62, 230, 160, 0.5);
+  background: rgba(62, 230, 160, 0.08);
+  color: var(--ok);
+}
+.delta--down {
+  border-color: rgba(255, 194, 77, 0.5);
+  background: rgba(255, 194, 77, 0.08);
+  color: var(--warn);
+}
+.delta .num {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.facts-wrap {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+}
+.facts-wrap--gauge {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: center;
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.facts-wrap--gauge .facts {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.facts > div {
+  display: grid;
+  gap: 2px;
+}
+.facts-wrap--gauge .facts > div {
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.facts-wrap--gauge .facts > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.facts dd {
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+.facts-wrap--gauge .facts dd {
+  font-size: 1.1rem;
+}
+
+.highlights {
+  display: grid;
+  gap: 8px;
+}
+.highlight {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+.highlight strong {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.highlight .num {
+  color: var(--accent-hi);
+  font-size: 0.82rem;
+}
+
+.legend {
+  gap: 8px;
+}
+.legend__swatch {
+  display: inline-block;
+  width: 14px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.legend__swatch--plan {
+  margin-left: 0;
+  background: repeating-linear-gradient(135deg, var(--accent) 0 2px, transparent 2px 4px);
+  outline: 1px solid var(--accent-line);
+}
+.bars {
+  display: grid;
+  gap: 16px;
+}
+.bars__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px 12px;
+  animation: rise 0.5s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+.bars__label {
+  display: grid;
+  min-width: 0;
+}
+.bars__label strong {
+  font-weight: 600;
+}
+.bars__label .num {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.bars__value {
+  color: var(--accent-hi);
+  font-size: 0.9rem;
+}
+.bars__track {
+  position: relative;
+  grid-column: 1 / -1;
+  height: 8px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.bars__plan,
+.bars__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--w);
+  border-radius: 2px;
+  transform-origin: left;
+  animation: grow-x 0.9s var(--ease) both;
+  animation-delay: calc(0.15s + var(--i, 0) * 80ms);
+}
+.bars__plan {
+  background: repeating-linear-gradient(135deg, var(--accent-line) 0 2px, transparent 2px 5px);
+  outline: 1px solid var(--accent-line);
+  outline-offset: -1px;
+}
+.bars__fill {
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(34, 184, 255, 0.4);
+}
+
+/* ---------- seletor de exercício (tela cheia) ---------- */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: rgba(5, 7, 10, 0.97);
+  animation: rise 0.35s var(--ease) both;
+}
+.sheet__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: calc(8px + env(safe-area-inset-top)) 10px 8px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.sheet__title {
+  color: var(--muted);
+  font-family: var(--f-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.sheet__body {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 14px 16px calc(24px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+}
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 62px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  text-align: left;
+  color: var(--text);
+  transition: border-color 0.25s var(--ease);
+}
+.pick:hover:not(:disabled) {
+  border-color: var(--accent-line);
+}
+.pick:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pick > svg:last-child {
+  color: var(--accent-hi);
+}
+.pick--skeleton {
+  height: 62px;
+  border-color: transparent;
+  background: linear-gradient(90deg, var(--panel) 25%, var(--panel-2) 50%, var(--panel) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Melhor exercício e mais pesado lado a lado */
+.highlights {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.highlight strong {
+  font-size: 0.95rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.highlight .micro {
+  white-space: nowrap;
+}
+
+/* modelo (hachurado, fino) e feito (sólido) sempre visíveis, um sobre o outro */
+.bars__track--pair {
+  height: 14px;
+  background: none;
+}
+.bars__track--pair::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.bars__track--pair .bars__plan {
+  inset: 0 auto auto 0;
+  height: 5px;
+}
+.bars__track--pair .bars__fill {
+  inset: auto auto 0 0;
+  height: 7px;
+}

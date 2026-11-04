@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String           @id @default(uuid())
+  name         String
+  email        String           @unique
+  passwordHash String
+  createdAt    DateTime         @default(now())
+  exercises    Exercise[]
+  entries      WorkoutEntry[]
+  workouts     Workout[]
+  sessions     WorkoutSession[]
+}
+
+model MuscleGroup {
+  id        String                @id @default(uuid())
+  name      String                @unique
+  primaryOf Exercise[]
+  related   ExerciseMuscleGroup[]
+}
+
+model Exercise {
+  id             String                @id @default(uuid())
+  name           String
+  primaryGroupId String
+  createdById    String?
+  primaryGroup   MuscleGroup           @relation(fields: [primaryGroupId], references: [id])
+  createdBy      User?                 @relation(fields: [createdById], references: [id])
+  related        ExerciseMuscleGroup[]
+  entries        WorkoutEntry[]
+  workoutItems   WorkoutItem[]
+}
+
+model ExerciseMuscleGroup {
+  exerciseId    String
+  muscleGroupId String
+  exercise      Exercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  muscleGroup   MuscleGroup @relation(fields: [muscleGroupId], references: [id])
+
+  @@id([exerciseId, muscleGroupId])
+}
+
+// Modelo de treino (Treino A, B, C): lista de exercícios com os números planejados.
+model Workout {
+  id        String           @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id])
+  items     WorkoutItem[]
+  sessions  WorkoutSession[]
+
+  @@unique([userId, name])
+}
+
+model WorkoutItem {
+  id         String   @id @default(uuid())
+  workoutId  String
+  exerciseId String
+  position   Int
+  sets       Int
+  reps       Int
+  weightKg   Float
+  workout    Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@index([workoutId, position])
+}
+
+// Um treino realizado. Guarda o nome do modelo na hora (workoutName), então o histórico continua
+// legível mesmo se o modelo for renomeado ou apagado.
+model WorkoutSession {
+  id          String         @id @default(uuid())
+  userId      String
+  workoutId   String?
+  workoutName String
+  startedAt   DateTime?
+  finishedAt  DateTime       @default(now())
+  user        User           @relation(fields: [userId], references: [id])
+  workout     Workout?       @relation(fields: [workoutId], references: [id], onDelete: SetNull)
+  entries     WorkoutEntry[]
+
+  @@index([userId, finishedAt])
+  @@index([workoutId, finishedAt])
+}
+
+// Uma série registrada. Quando vem de um treino finalizado, aponta para a sessão (sessionId).
+model WorkoutEntry {
+  id          String          @id @default(uuid())
+  userId      String
+  exerciseId  String
+  sessionId   String?
+  position    Int             @default(0)
+  sets        Int
+  reps        Int
+  weightKg    Float
+  performedAt DateTime        @default(now())
+  user        User            @relation(fields: [userId], references: [id])
+  exercise    Exercise        @relation(fields: [exerciseId], references: [id])
+  session     WorkoutSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, exerciseId, performedAt])
+  @@index([sessionId])
+}
