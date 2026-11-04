@@ -20,3 +20,9 @@ export const createEntrySchema = z.object({
       .optional(),
   }),
 });
+
+export const listEntriesSchema = z.object({
+  params: z.object({
+    id: z.uuid(),
+  }),
+});
