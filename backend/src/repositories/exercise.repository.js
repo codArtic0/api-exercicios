@@ -1,7 +1,8 @@
 import prisma from '../configs/prisma.js';
 
-// Exercício é sempre do usuário que o criou: nenhuma consulta devolve o de outra pessoa.
-const ownedBy = (userId) => ({ createdById: userId });
+// Visível = do catálogo (createdById nulo, igual para todos) ou criado pelo próprio usuário.
+// Exercício criado por outro usuário nunca é devolvido.
+const visibleTo = (userId) => ({ OR: [{ createdById: null }, { createdById: userId }] });
 
 // Tudo que a tela precisa de um exercício: grupo principal, relacionados e a última série do usuário.
 const withDetails = (userId) => ({
@@ -10,19 +11,19 @@ const withDetails = (userId) => ({
   entries: { where: { userId }, orderBy: { performedAt: 'desc' }, take: 1 },
 });
 
-export const findOwnedById = (id, userId) =>
-  prisma.exercise.findFirst({ where: { id, ...ownedBy(userId) } });
+export const findVisibleById = (id, userId) =>
+  prisma.exercise.findFirst({ where: { id, ...visibleTo(userId) } });
 
-export const findOwnedByName = (name, userId) =>
+export const findVisibleByName = (name, userId) =>
   prisma.exercise.findFirst({
-    where: { name: { equals: name, mode: 'insensitive' }, ...ownedBy(userId) },
+    where: { name: { equals: name, mode: 'insensitive' }, ...visibleTo(userId) },
   });
 
 export const list = (userId, { group, q } = {}) =>
   prisma.exercise.findMany({
     where: {
       AND: [
-        ownedBy(userId),
+        visibleTo(userId),
         group
           ? {
               OR: [
