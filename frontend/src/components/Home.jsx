@@ -108,7 +108,10 @@ export default function Home({ user, groups, group, onGroupChange, onOpen, onAdd
                       <Icon size={26} />
                     </span>
                     <span className="card__body">
-                      <strong>{ex.name}</strong>
+                      <strong>
+                        {ex.name}
+                        {!ex.isCatalog && <span className="tag">Meu</span>}
+                      </strong>
                       <span className="card__last">
                         {ex.lastEntry
                           ? `${formatNumber(ex.lastEntry.weightKg)} kg · ${ex.lastEntry.sets} séries de ${ex.lastEntry.reps} repetições`
