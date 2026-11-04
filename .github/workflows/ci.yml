@@ -53,6 +53,9 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Rodar testes
+        run: npm test
+
   frontend:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
