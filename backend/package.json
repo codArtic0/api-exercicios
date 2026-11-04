@@ -9,6 +9,7 @@
     "express-rate-limit": "^8.7.3",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
+    "prisma": "^6.19.3",
     "zod": "^4.6.7"
   },
   "scripts": {
@@ -21,7 +22,6 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
-    "prisma": "^6.19.3",
     "supertest": "^7.3.1",
     "vitest": "^5.1.0"
   }
