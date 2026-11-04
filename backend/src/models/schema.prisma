@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(uuid())
+  name         String
+  email        String         @unique
+  passwordHash String
+  createdAt    DateTime       @default(now())
+  exercises    Exercise[]
+  entries      WorkoutEntry[]
+}
+
+model MuscleGroup {
+  id        String                @id @default(uuid())
+  name      String                @unique
+  primaryOf Exercise[]
+  related   ExerciseMuscleGroup[]
+}
+
+model Exercise {
+  id             String                @id @default(uuid())
+  name           String
+  primaryGroupId String
+  createdById    String?
+  primaryGroup   MuscleGroup           @relation(fields: [primaryGroupId], references: [id])
+  createdBy      User?                 @relation(fields: [createdById], references: [id])
+  related        ExerciseMuscleGroup[]
+  entries        WorkoutEntry[]
+}
+
+model ExerciseMuscleGroup {
+  exerciseId    String
+  muscleGroupId String
+  exercise      Exercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  muscleGroup   MuscleGroup @relation(fields: [muscleGroupId], references: [id])
+
+  @@id([exerciseId, muscleGroupId])
+}
+
+model WorkoutEntry {
+  id          String   @id @default(uuid())
+  userId      String
+  exerciseId  String
+  sets        Int
+  reps        Int
+  weightKg    Float
+  performedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  exercise    Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@index([userId, exerciseId, performedAt])
+}
