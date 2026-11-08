@@ -51,3 +51,38 @@ export function compareWithPrevious(totalVolume, previousVolume) {
     deltaPct: round1(((totalVolume - previousVolume) / previousVolume) * 100),
   };
 }
+
+// Blocos do mesmo exercício em sequência viram um grupo: [{ exercise, blocks, volume }].
+// items: [{ exercise: { id, name }, sets, reps, weightKg }]
+export function groupByExercise(items) {
+  const groups = [];
+  for (const item of items) {
+    const volume = itemVolume(item);
+    const block = { sets: item.sets, reps: item.reps, weightKg: item.weightKg, volume };
+    const last = groups[groups.length - 1];
+    if (last && last.exercise.id === item.exercise.id) {
+      last.blocks.push(block);
+      last.volume += volume;
+    } else {
+      groups.push({ exercise: item.exercise, blocks: [block], volume });
+    }
+  }
+  return groups.map((g) => ({ ...g, volume: round1(g.volume) }));
+}
+
+// O que um modelo de treino prevê: volume, séries e número de exercícios distintos.
+// items: [{ exercise: { id }, sets, reps, weightKg }]
+export function plannedTotals(items) {
+  return {
+    volume: round1(items.reduce((sum, i) => sum + itemVolume(i), 0)),
+    sets: items.reduce((sum, i) => sum + i.sets, 0),
+    exerciseCount: new Set(items.map((i) => i.exercise.id)).size,
+  };
+}
+
+// Volume previsto por exercício (soma os blocos), indexado pelo id do exercício.
+export function plannedByExercise(items) {
+  const byExercise = {};
+  for (const i of items) byExercise[i.exercise.id] = round1((byExercise[i.exercise.id] ?? 0) + itemVolume(i));
+  return byExercise;
+}

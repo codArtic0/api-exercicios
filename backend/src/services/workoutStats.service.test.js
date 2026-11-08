@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { compareWithPrevious, computeSessionStats, itemVolume } from './workoutStats.service.js';
+import {
+  compareWithPrevious,
+  computeSessionStats,
+  groupByExercise,
+  itemVolume,
+  plannedByExercise,
+  plannedTotals,
+} from './workoutStats.service.js';
 
 const item = (name, sets, reps, weightKg) => ({
   exerciseId: `id-${name}`,
@@ -105,5 +112,41 @@ describe('compareWithPrevious', () => {
 
   it.each([null, undefined, 0])('sem comparação quando o anterior é %s', (previous) => {
     expect(compareWithPrevious(1000, previous)).toBeNull();
+  });
+});
+
+describe('groupByExercise', () => {
+  const ex = (id, name) => ({ id, name });
+
+  it('junta blocos seguidos do mesmo exercício e soma o volume', () => {
+    const groups = groupByExercise([
+      { exercise: ex('s', 'Supino'), sets: 1, reps: 12, weightKg: 20 },
+      { exercise: ex('s', 'Supino'), sets: 3, reps: 8, weightKg: 40 },
+      { exercise: ex('r', 'Remada'), sets: 4, reps: 10, weightKg: 25 },
+    ]);
+
+    expect(groups).toHaveLength(2);
+    expect(groups[0]).toMatchObject({ exercise: { id: 's' }, volume: 1200 });
+    expect(groups[0].blocks).toEqual([
+      { sets: 1, reps: 12, weightKg: 20, volume: 240 },
+      { sets: 3, reps: 8, weightKg: 40, volume: 960 },
+    ]);
+    expect(groups[1].volume).toBe(1000);
+  });
+});
+
+describe('plannedTotals e plannedByExercise', () => {
+  const items = [
+    { exercise: { id: 's' }, sets: 1, reps: 12, weightKg: 20 },
+    { exercise: { id: 's' }, sets: 3, reps: 8, weightKg: 40 },
+    { exercise: { id: 'r' }, sets: 4, reps: 10, weightKg: 25 },
+  ];
+
+  it('volume, séries e exercícios distintos', () => {
+    expect(plannedTotals(items)).toEqual({ volume: 2200, sets: 8, exerciseCount: 2 });
+  });
+
+  it('volume previsto por exercício soma os blocos', () => {
+    expect(plannedByExercise(items)).toEqual({ s: 1200, r: 1000 });
   });
 });

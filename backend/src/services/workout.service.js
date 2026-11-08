@@ -1,10 +1,16 @@
 import { AppError } from '../middlewares/error.middleware.js';
 import * as exerciseRepository from '../repositories/exercise.repository.js';
 import * as workoutRepository from '../repositories/workout.repository.js';
+import { plannedTotals } from './workoutStats.service.js';
 
-export const toWorkoutResponse = ({ id, name, items, sessions }) => ({
-  id,
-  name,
+export const toWorkoutResponse = ({ id, name, items, sessions }) => {
+  const planned = plannedTotals(items);
+  return {
+    id,
+    name,
+    exerciseCount: planned.exerciseCount,
+    plannedSets: planned.sets,
+    plannedVolume: planned.volume,
   items: items.map(({ id: itemId, exercise, sets, reps, weightKg }) => ({
     id: itemId,
     exercise: {
@@ -17,7 +23,8 @@ export const toWorkoutResponse = ({ id, name, items, sessions }) => ({
     weightKg,
   })),
   lastSessionAt: sessions?.[0]?.finishedAt ?? null,
-});
+  };
+};
 
 // Todo exercício do treino precisa ser visível ao usuário (do catálogo ou dele).
 export async function assertExercisesVisible(userId, items) {

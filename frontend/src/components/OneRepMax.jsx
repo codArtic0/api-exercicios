@@ -1,12 +1,11 @@
 import { formatNumber } from '../lib/stats.js'
-import { MAX_REPS, bestOneRepMax, lastOneRepMaxChange, loadTable } from '../lib/oneRepMax.js'
 import { ArrowDown, ArrowUp } from './Icons.jsx'
 
 // 1RM estimado do exercício, recalculado a cada série registrada, e as cargas de treino
 // sugeridas a partir dele.
-export default function OneRepMax({ entries }) {
-  const best = bestOneRepMax(entries)
-  const change = lastOneRepMaxChange(entries)
+export default function OneRepMax({ oneRepMax, repLimit }) {
+  const best = oneRepMax?.value ?? null
+  const change = oneRepMax?.change ?? null
 
   return (
     <section className="panel orm">
@@ -17,7 +16,7 @@ export default function OneRepMax({ entries }) {
 
       {best === null ? (
         <p className="orm__empty">
-          Registre uma série de até {MAX_REPS} repetições para estimar a sua carga máxima.
+          Registre uma série de até {repLimit} repetições para estimar a sua carga máxima.
         </p>
       ) : (
         <>
@@ -38,7 +37,7 @@ export default function OneRepMax({ entries }) {
           </div>
 
           <ul className="orm__table" aria-label="Cargas sugeridas a partir do 1RM">
-            {loadTable(best).map((row) => (
+            {oneRepMax.loadTable.map((row) => (
               <li key={row.pct}>
                 <span className="micro num">{row.pct}%</span>
                 <strong className="num">{formatNumber(row.weightKg)} kg</strong>
@@ -47,7 +46,7 @@ export default function OneRepMax({ entries }) {
             ))}
           </ul>
           <p className="orm__note micro">
-            Estimativa: 1RM = peso × (1 + reps ÷ 30). Ignora séries com mais de {MAX_REPS} repetições.
+            Estimativa: 1RM = peso × (1 + reps ÷ 30). Ignora séries com mais de {repLimit} repetições.
           </p>
         </>
       )}

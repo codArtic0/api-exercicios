@@ -2,22 +2,21 @@ import { useState } from 'react'
 import { api, describeError } from '../lib/api.js'
 import { formatLongDate, formatNumber } from '../lib/stats.js'
 import { useCountUp } from '../lib/useCountUp.js'
-import { groupByExercise } from '../lib/workout.js'
 import Gauge from './Gauge.jsx'
 import { ArrowDown, ArrowUp, Trash, Trophy } from './Icons.jsx'
 
 // Estatísticas de um treino realizado: logo após finalizar ou ao abrir pelo histórico.
 // "planned" (volume do modelo) só existe logo após finalizar. Com ele aparecem o medidor e as
 // barras hachuradas do que o modelo previa; sem ele, só o que foi feito.
-export default function SessionSummary({ session, planned, justFinished, onClose, onDeleted }) {
-  const { stats } = session
+export default function SessionSummary({ session, justFinished, onClose, onDeleted }) {
+  const { stats, planned } = session
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const volume = useCountUp(stats.totalVolume)
 
   const previous = stats.previous
   const pct = planned && planned.volume > 0 ? (stats.totalVolume / planned.volume) * 100 : null
-  const groups = groupByExercise(session.items)
+  const groups = session.exercises
   const maxBar = Math.max(...groups.flatMap((g) => [g.volume, planned?.byExercise?.[g.exercise.id] ?? 0]), 1)
 
   async function remove() {

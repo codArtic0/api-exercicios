@@ -13,7 +13,6 @@ import {
   sumVolume,
   validateItems,
 } from '../lib/workout.js'
-import { plannedVolume } from '../lib/week.js'
 import ExercisePicker from './ExercisePicker.jsx'
 import { Check, Clock, Plus } from './Icons.jsx'
 import SeriesBlocks from './SeriesBlocks.jsx'
@@ -53,15 +52,8 @@ export default function WorkoutRunner({ workout, groups, onFinished }) {
     setError('')
     setBusy(true)
     try {
-      const session = await api.finishWorkout(workout.id, { items: payload, startedAt: startedAt.toISOString() })
-      // O resumo compara o que foi feito com o que o modelo previa (o modelo não muda).
-      onFinished(session, {
-        volume: plannedVolume(workout),
-        byExercise: workout.items.reduce((acc, i) => {
-          acc[i.exercise.id] = (acc[i.exercise.id] ?? 0) + i.sets * i.reps * i.weightKg
-          return acc
-        }, {}),
-      })
+      // A API devolve o resumo já com o que o modelo previa para comparar.
+      onFinished(await api.finishWorkout(workout.id, { items: payload, startedAt: startedAt.toISOString() }))
     } catch (err) {
       setError(describeError(err))
       setBusy(false)

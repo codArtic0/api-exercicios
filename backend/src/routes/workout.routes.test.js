@@ -87,6 +87,9 @@ describe('GET /workouts', () => {
       {
         id: WID,
         name: 'Treino A',
+        exerciseCount: 1,
+        plannedSets: 3,
+        plannedVolume: 2160,
         items: [
           {
             id: 'i-1',
