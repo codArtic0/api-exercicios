@@ -551,3 +551,25 @@
   inset: auto auto 0 0;
   height: 7px;
 }
+
+/* ---------- blocos de séries (pesos diferentes no mesmo exercício) ---------- */
+.blocks {
+  display: grid;
+  gap: 10px;
+}
+.block {
+  display: grid;
+  gap: 8px;
+}
+.block + .block {
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.block__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.blocks__add {
+  justify-self: start;
+}

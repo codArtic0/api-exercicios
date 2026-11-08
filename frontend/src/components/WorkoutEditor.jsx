@@ -1,23 +1,22 @@
 import { useState } from 'react'
 import { api, describeError } from '../lib/api.js'
 import { DEFAULT_ICON, GROUP_ICONS } from '../lib/groups.js'
-import { fromExercise, fromWorkoutItem, validateItems } from '../lib/workout.js'
+import { addBlock, fromExercise, fromWorkoutItems, removeBlock, setBlockValue, validateItems } from '../lib/workout.js'
 import ExercisePicker from './ExercisePicker.jsx'
 import { ArrowDown, ArrowUp, Check, Plus, Trash } from './Icons.jsx'
-import MiniSteppers from './MiniSteppers.jsx'
+import SeriesBlocks from './SeriesBlocks.jsx'
 
 // Cria ou edita o modelo de um treino (ex.: Treino A). Os números daqui são só o ponto de partida:
 // no dia do treino dá para mudar cada um.
 export default function WorkoutEditor({ workout, suggestedName, groups, onSaved, onDeleted }) {
   const editing = !!workout
   const [name, setName] = useState(workout?.name ?? suggestedName)
-  const [items, setItems] = useState(() => (workout?.items ?? []).map(fromWorkoutItem))
+  const [items, setItems] = useState(() => fromWorkoutItems(workout?.items ?? []))
   const [picking, setPicking] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const setValue = (key, field, text) =>
-    setItems((list) => list.map((i) => (i.key === key ? { ...i, values: { ...i.values, [field]: text } } : i)))
+  const update = (key, change) => setItems((list) => list.map((i) => (i.key === key ? change(i) : i)))
 
   const remove = (key) => setItems((list) => list.filter((i) => i.key !== key))
 
@@ -125,10 +124,12 @@ export default function WorkoutEditor({ workout, suggestedName, groups, onSaved,
                   </button>
                 </div>
               </div>
-              <MiniSteppers
+              <SeriesBlocks
+                item={item}
                 idPrefix={`e-${item.key}`}
-                values={item.values}
-                onChange={(field, text) => setValue(item.key, field, text)}
+                onValue={(blockKey, field, text) => update(item.key, (i) => setBlockValue(i, blockKey, field, text))}
+                onAdd={() => update(item.key, addBlock)}
+                onRemove={(blockKey) => update(item.key, (i) => removeBlock(i, blockKey))}
               />
             </li>
           )

@@ -67,7 +67,7 @@ export default function WorkoutsScreen({ onNew, onEdit, onRun, onOpenSession }) 
                 <div className="workout__id">
                   <strong className="workout__name">{w.name}</strong>
                   <span className="num workout__meta">
-                    {w.items.length} ex · {formatNumber(plannedVolume(w))} kg
+                    {new Set(w.items.map((i) => i.exercise.id)).size} ex · {formatNumber(plannedVolume(w))} kg
                   </span>
                 </div>
                 <button
@@ -79,11 +79,10 @@ export default function WorkoutsScreen({ onNew, onEdit, onRun, onOpenSession }) 
                 </button>
               </div>
               <p className="micro workout__list">
-                {w.items
-                  .slice(0, 3)
-                  .map((i) => i.exercise.name)
-                  .join(' · ')}
-                {w.items.length > 3 ? ` · +${w.items.length - 3}` : ''}
+                {[...new Set(w.items.map((i) => i.exercise.name))].slice(0, 3).join(' · ')}
+                {new Set(w.items.map((i) => i.exercise.id)).size > 3
+                  ? ` · +${new Set(w.items.map((i) => i.exercise.id)).size - 3}`
+                  : ''}
               </p>
               <div className="workout__foot">
                 <span className="micro">

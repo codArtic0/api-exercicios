@@ -127,6 +127,22 @@ describe('POST /workouts', () => {
     expect(exerciseRepository.findVisibleByIds).toHaveBeenCalledWith([EX1, EX2], 'user-1');
   });
 
+  it('201 aceita o mesmo exercício em blocos com pesos diferentes, na ordem enviada', async () => {
+    const items = [
+      { exerciseId: EX1, sets: 1, reps: 12, weightKg: 20 },
+      { exerciseId: EX1, sets: 3, reps: 8, weightKg: 40 },
+    ];
+    workoutRepository.findByName.mockResolvedValue(null);
+    exerciseRepository.findVisibleByIds.mockResolvedValue([{ id: EX1 }]);
+    workoutRepository.create.mockResolvedValue(row());
+
+    const res = await request(app).post('/workouts').set('Authorization', token()).send({ name: 'A', items });
+
+    expect(res.status).toBe(201);
+    expect(workoutRepository.create.mock.calls[0][0].items).toEqual(items);
+    expect(exerciseRepository.findVisibleByIds).toHaveBeenCalledWith([EX1], 'user-1');
+  });
+
   it('o dono vem do token, nunca do corpo', async () => {
     workoutRepository.findByName.mockResolvedValue(null);
     exerciseRepository.findVisibleByIds.mockResolvedValue([{ id: EX1 }, { id: EX2 }]);
@@ -175,11 +191,10 @@ describe('POST /workouts', () => {
     ['sem nome', { items: body.items }],
     ['nome só com espaços', { ...body, name: '   ' }],
     ['sem exercícios', { name: 'A', items: [] }],
-    ['exercício repetido', { name: 'A', items: [body.items[0], body.items[0]] }],
     ['peso com duas casas', { name: 'A', items: [{ exerciseId: EX1, sets: 3, reps: 12, weightKg: 60.55 }] }],
     ['séries zero', { name: 'A', items: [{ exerciseId: EX1, sets: 0, reps: 12, weightKg: 60 }] }],
     ['exerciseId que não é UUID', { name: 'A', items: [{ exerciseId: '1', sets: 3, reps: 12, weightKg: 60 }] }],
-    ['treino com exercícios demais', { name: 'A', items: Array(31).fill(body.items[0]) }],
+    ['treino com exercícios demais', { name: 'A', items: Array(61).fill(body.items[0]) }],
   ])('400 com %s', async (_nome, payload) => {
     const res = await request(app).post('/workouts').set('Authorization', token()).send(payload);
 
