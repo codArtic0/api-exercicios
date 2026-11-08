@@ -95,6 +95,9 @@ export const api = {
   listSessions: (limit = 10) => request(`/sessions?limit=${limit}`),
   deleteSession: (id) => request(`/sessions/${id}`, { method: 'DELETE' }),
   listEntries: (exerciseId) => request(`/exercises/${exerciseId}/entries`),
+  exerciseStats: (exerciseId) => request(`/exercises/${exerciseId}/stats`),
+  // O fuso do aparelho diz à API qual é o "hoje" do usuário.
+  dashboard: () => request(`/dashboard?tz=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)}`),
   createEntry: (exerciseId, body) =>
     request(`/exercises/${exerciseId}/entries`, { method: 'POST', body }),
 }

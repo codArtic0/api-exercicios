@@ -1,31 +1,30 @@
 import { useEffect, useState } from 'react'
 import { api, describeError } from '../lib/api.js'
 import { formatLongDate, formatNumber } from '../lib/stats.js'
-import { lastSevenDays, pickNextWorkout, plannedSets, plannedVolume, weekTotals, workoutBadge } from '../lib/week.js'
+import { decorateDays, workoutBadge } from '../lib/week.js'
 import { ChevronRight, Play, Plus } from './Icons.jsx'
 import WeekChart from './WeekChart.jsx'
 
 // Aba inicial: o que treinar agora, como foi a semana e o último treino.
 export default function Dashboard({ user, onRun, onNewWorkout, onOpenSession }) {
-  const [state, setState] = useState({ loaded: false, workouts: [], sessions: [], error: '' })
+  const [state, setState] = useState({ loaded: false, data: null, error: '' })
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([api.listWorkouts(), api.listSessions(30)])
-      .then(([workouts, sessions]) => !cancelled && setState({ loaded: true, workouts, sessions, error: '' }))
-      .catch((err) =>
-        !cancelled && setState({ loaded: true, workouts: [], sessions: [], error: describeError(err) }),
-      )
+    api
+      .dashboard()
+      .then((data) => !cancelled && setState({ loaded: true, data, error: '' }))
+      .catch((err) => !cancelled && setState({ loaded: true, data: null, error: describeError(err) }))
     return () => {
       cancelled = true
     }
   }, [])
 
-  const { loaded, workouts, sessions, error } = state
+  const { loaded, data, error } = state
   const today = new Date()
-  const next = loaded ? pickNextWorkout(workouts, sessions) : null
-  const totals = weekTotals(sessions, today)
-  const last = sessions[0]
+  const next = data?.nextWorkout ?? null
+  const totals = data?.week.totals
+  const last = data?.lastSession
 
   return (
     <>
@@ -52,7 +51,7 @@ export default function Dashboard({ user, onRun, onNewWorkout, onOpenSession }) 
             <div>
               <h2 className="next__name">{next.name}</h2>
               <p className="num next__meta">
-                {next.items.length} ex · {plannedSets(next)} séries · {formatNumber(plannedVolume(next))} kg
+                {next.exerciseCount} ex · {next.plannedSets} séries · {formatNumber(next.plannedVolume)} kg
               </p>
             </div>
           </div>
@@ -65,7 +64,7 @@ export default function Dashboard({ user, onRun, onNewWorkout, onOpenSession }) 
                 </span>
               </li>
             ))}
-            {next.items.length > 3 && <li className="next__more micro">+{next.items.length - 3} exercícios</li>}
+            {next.items.length > 3 && <li className="next__more micro">+{next.items.length - 3} séries</li>}
           </ul>
           <button className="btn btn--primary" onClick={() => onRun(next)}>
             <Play size={18} />
@@ -86,7 +85,7 @@ export default function Dashboard({ user, onRun, onNewWorkout, onOpenSession }) 
         </section>
       )}
 
-      {loaded && !error && (
+      {loaded && !error && data && (
         <>
           <section className="kpis" aria-label="Últimos 7 dias">
             <div className="kpi">
@@ -111,7 +110,7 @@ export default function Dashboard({ user, onRun, onNewWorkout, onOpenSession }) 
               <h2 className="micro">Volume por dia</h2>
               <span className="micro">Últimos 7 dias</span>
             </header>
-            <WeekChart days={lastSevenDays(sessions, today)} />
+            <WeekChart days={decorateDays(data.week.days)} />
           </section>
 
           {last && (

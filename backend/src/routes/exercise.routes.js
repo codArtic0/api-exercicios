@@ -12,5 +12,6 @@ router.get('/', auth, validate(listExercisesSchema), exerciseController.list);
 router.post('/', auth, validate(createExerciseSchema), exerciseController.create);
 router.post('/:id/entries', auth, validate(createEntrySchema), entryController.create);
 router.get('/:id/entries', auth, validate(listEntriesSchema), entryController.listByExercise);
+router.get('/:id/stats', auth, validate(listEntriesSchema), entryController.stats);
 
 export default router;

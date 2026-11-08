@@ -146,7 +146,7 @@ export default function App() {
         key={wView.workout.id}
         workout={wView.workout}
         groups={groups}
-        onFinished={(session, planned) => setWView({ name: 'summary', session, planned, justFinished: true })}
+        onFinished={(session) => setWView({ name: 'summary', session, justFinished: true })}
       />
     )
   } else if (wView.name === 'summary') {
@@ -154,7 +154,6 @@ export default function App() {
       <SessionSummary
         key={wView.session.id}
         session={wView.session}
-        planned={wView.planned}
         justFinished={wView.justFinished}
         onClose={() => setWView(LIST)}
         onDeleted={() => setWView(LIST)}

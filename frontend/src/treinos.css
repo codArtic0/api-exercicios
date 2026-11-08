@@ -551,3 +551,81 @@
   inset: auto auto 0 0;
   height: 7px;
 }
+
+/* ---------- blocos de séries (pesos diferentes no mesmo exercício) ---------- */
+.blocks {
+  display: grid;
+  gap: 10px;
+}
+.block {
+  display: grid;
+  gap: 8px;
+}
+.block + .block {
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.block__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.blocks__add {
+  justify-self: start;
+}
+
+/* ---------- 1RM estimado ---------- */
+.orm {
+  display: grid;
+  gap: 14px;
+}
+.orm__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+}
+.orm__value {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 2.2rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--accent-hi);
+}
+.orm__value small {
+  font-size: 1rem;
+  color: var(--muted);
+}
+.orm__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+.orm__delta--up {
+  color: var(--accent-hi);
+}
+.orm__delta--down {
+  color: var(--muted);
+}
+.orm__table {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.orm__table li {
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.orm__empty,
+.orm__note {
+  margin: 0;
+  color: var(--muted);
+}

@@ -10,13 +10,9 @@ const itemSchema = z.object({
   weightKg: weightKgField,
 });
 
-const items = z
-  .array(itemSchema)
-  .min(1)
-  .max(30)
-  .refine((list) => new Set(list.map((i) => i.exerciseId)).size === list.length, {
-    message: 'Exercício repetido no treino',
-  });
+// Um exercício pode aparecer em mais de uma linha: cada linha é um bloco de séries com o mesmo
+// peso e repetições (ex.: 1 × 12 com 20 kg e 3 × 8 com 40 kg). A ordem da lista é mantida.
+const items = z.array(itemSchema).min(1).max(60);
 
 const name = z.string().trim().min(1).max(60);
 

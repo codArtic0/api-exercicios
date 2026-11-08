@@ -2,18 +2,27 @@ import { useEffect, useState } from 'react'
 import { api, describeError } from '../lib/api.js'
 import { DEFAULT_ICON, GROUP_ICONS } from '../lib/groups.js'
 import { formatClock, formatNumber } from '../lib/stats.js'
-import { fromExercise, fromWorkoutItem, isChanged, sumVolume, validateItems } from '../lib/workout.js'
-import { plannedVolume } from '../lib/week.js'
+import {
+  addBlock,
+  describePlan,
+  fromExercise,
+  fromWorkoutItems,
+  isChanged,
+  removeBlock,
+  setBlockValue,
+  sumVolume,
+  validateItems,
+} from '../lib/workout.js'
 import ExercisePicker from './ExercisePicker.jsx'
 import { Check, Clock, Plus } from './Icons.jsx'
-import MiniSteppers from './MiniSteppers.jsx'
+import SeriesBlocks from './SeriesBlocks.jsx'
 
 // O treino do dia. Começa com os números do modelo, mas cada um pode ser mudado (fez menos
 // séries, usou outra carga...). Ao finalizar, tudo é registrado de uma vez. O modelo não muda.
 export default function WorkoutRunner({ workout, groups, onFinished }) {
   const [startedAt] = useState(() => new Date())
   const [now, setNow] = useState(() => Date.now())
-  const [items, setItems] = useState(() => workout.items.map(fromWorkoutItem))
+  const [items, setItems] = useState(() => fromWorkoutItems(workout.items))
   const [picking, setPicking] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -27,8 +36,7 @@ export default function WorkoutRunner({ workout, groups, onFinished }) {
   const volume = sumVolume(included)
 
   const patch = (key, changes) => setItems((list) => list.map((i) => (i.key === key ? { ...i, ...changes } : i)))
-  const setValue = (key, field, text) =>
-    setItems((list) => list.map((i) => (i.key === key ? { ...i, values: { ...i.values, [field]: text } } : i)))
+  const update = (key, change) => setItems((list) => list.map((i) => (i.key === key ? change(i) : i)))
 
   async function finish() {
     if (included.length === 0) {
@@ -44,12 +52,8 @@ export default function WorkoutRunner({ workout, groups, onFinished }) {
     setError('')
     setBusy(true)
     try {
-      const session = await api.finishWorkout(workout.id, { items: payload, startedAt: startedAt.toISOString() })
-      // O resumo compara o que foi feito com o que o modelo previa (o modelo não muda).
-      onFinished(session, {
-        volume: plannedVolume(workout),
-        byExercise: Object.fromEntries(workout.items.map((i) => [i.exercise.id, i.sets * i.reps * i.weightKg])),
-      })
+      // A API devolve o resumo já com o que o modelo previa para comparar.
+      onFinished(await api.finishWorkout(workout.id, { items: payload, startedAt: startedAt.toISOString() }))
     } catch (err) {
       setError(describeError(err))
       setBusy(false)
@@ -86,13 +90,11 @@ export default function WorkoutRunner({ workout, groups, onFinished }) {
                 <span className="card__body">
                   <strong>
                     {item.name}
-                    {!item.planned && <span className="tag">Extra</span>}
+                    {item.plannedCount === 0 && <span className="tag">Extra</span>}
                     {changed && item.included && <span className="tag tag--warn">Alterado</span>}
                   </strong>
                   <small>
-                    {item.planned
-                      ? `Modelo: ${item.planned.sets} × ${item.planned.reps} · ${formatNumber(item.planned.weightKg)} kg`
-                      : item.groupName}
+                    {item.plannedCount > 0 ? `Modelo: ${describePlan(item, formatNumber)}` : item.groupName}
                   </small>
                 </span>
                 <label className="toggle">
@@ -104,11 +106,13 @@ export default function WorkoutRunner({ workout, groups, onFinished }) {
                   <span>{item.included ? 'Feito' : 'Pular'}</span>
                 </label>
               </div>
-              <MiniSteppers
+              <SeriesBlocks
+                item={item}
                 idPrefix={`r-${item.key}`}
-                values={item.values}
                 disabled={!item.included}
-                onChange={(field, text) => setValue(item.key, field, text)}
+                onValue={(blockKey, field, text) => update(item.key, (i) => setBlockValue(i, blockKey, field, text))}
+                onAdd={() => update(item.key, addBlock)}
+                onRemove={(blockKey) => update(item.key, (i) => removeBlock(i, blockKey))}
               />
             </li>
           )

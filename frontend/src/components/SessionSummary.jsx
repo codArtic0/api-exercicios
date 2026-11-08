@@ -8,18 +8,16 @@ import { ArrowDown, ArrowUp, Trash, Trophy } from './Icons.jsx'
 // Estatísticas de um treino realizado: logo após finalizar ou ao abrir pelo histórico.
 // "planned" (volume do modelo) só existe logo após finalizar. Com ele aparecem o medidor e as
 // barras hachuradas do que o modelo previa; sem ele, só o que foi feito.
-export default function SessionSummary({ session, planned, justFinished, onClose, onDeleted }) {
-  const { stats } = session
+export default function SessionSummary({ session, justFinished, onClose, onDeleted }) {
+  const { stats, planned } = session
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const volume = useCountUp(stats.totalVolume)
 
   const previous = stats.previous
   const pct = planned && planned.volume > 0 ? (stats.totalVolume / planned.volume) * 100 : null
-  const maxBar = Math.max(
-    ...session.items.flatMap((i) => [i.volume, planned?.byExercise?.[i.exercise.id] ?? 0]),
-    1,
-  )
+  const groups = session.exercises
+  const maxBar = Math.max(...groups.flatMap((g) => [g.volume, planned?.byExercise?.[g.exercise.id] ?? 0]), 1)
 
   async function remove() {
     if (!window.confirm('Apagar este treino? As séries que ele registrou também serão apagadas.')) return
@@ -105,22 +103,24 @@ export default function SessionSummary({ session, planned, justFinished, onClose
           )}
         </header>
         <ul className="bars">
-          {session.items.map((item, index) => {
-            const plan = planned?.byExercise?.[item.exercise.id]
+          {groups.map((group, index) => {
+            const plan = planned?.byExercise?.[group.exercise.id]
             return (
-              <li key={item.exercise.id} className="bars__row" style={{ '--i': index }}>
+              <li key={`${group.exercise.id}-${index}`} className="bars__row" style={{ '--i': index }}>
                 <div className="bars__label">
-                  <strong>{item.exercise.name}</strong>
+                  <strong>{group.exercise.name}</strong>
                   <span className="num">
-                    {item.sets} × {item.reps} · {formatNumber(item.weightKg)} kg
+                    {group.blocks
+                      .map((b) => `${b.sets} × ${b.reps} · ${formatNumber(b.weightKg)} kg`)
+                      .join(' + ')}
                   </span>
                 </div>
-                <span className="bars__value num">{formatNumber(item.volume)} kg</span>
+                <span className="bars__value num">{formatNumber(group.volume)} kg</span>
                 <div className={plan !== undefined ? 'bars__track bars__track--pair' : 'bars__track'}>
                   {plan !== undefined && (
                     <span className="bars__plan" style={{ '--w': `${(plan / maxBar) * 100}%` }} />
                   )}
-                  <span className="bars__fill" style={{ '--w': `${(item.volume / maxBar) * 100}%` }} />
+                  <span className="bars__fill" style={{ '--w': `${(group.volume / maxBar) * 100}%` }} />
                 </div>
               </li>
             )
