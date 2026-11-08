@@ -63,6 +63,21 @@ describe('computeSessionStats', () => {
     expect(stats.exerciseCount).toBe(1);
   });
 
+  it('blocos do mesmo exercício contam como um exercício e somam o volume', () => {
+    // Supino: 1 × 12 com 20 kg + 3 × 8 com 40 kg = 240 + 960 = 1200. Remada: 4 × 10 com 25 kg = 1000.
+    const stats = computeSessionStats([
+      item('Supino', 1, 12, 20),
+      item('Supino', 3, 8, 40),
+      item('Remada', 4, 10, 25),
+    ]);
+
+    expect(stats.exerciseCount).toBe(2);
+    expect(stats.totalSets).toBe(8);
+    expect(stats.totalVolume).toBe(2200);
+    expect(stats.bestExercise).toEqual({ exerciseId: 'id-Supino', name: 'Supino', volume: 1200 });
+    expect(stats.heaviest).toEqual({ exerciseId: 'id-Supino', name: 'Supino', weightKg: 40 });
+  });
+
   it('lista vazia: tudo zerado e sem destaque', () => {
     expect(computeSessionStats([])).toEqual({
       totalVolume: 0,
