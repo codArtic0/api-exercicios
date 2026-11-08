@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { api, describeError } from '../lib/api.js'
 import { byDateAsc, computeStats, entryVolume, formatNumber } from '../lib/stats.js'
+import { entryOneRepMax } from '../lib/oneRepMax.js'
 import EntryForm from './EntryForm.jsx'
 import { Trophy } from './Icons.jsx'
+import OneRepMax from './OneRepMax.jsx'
 import WeightChart from './WeightChart.jsx'
 
 const DEFAULTS = { sets: 3, reps: 12, weightKg: 20 }
@@ -26,6 +28,8 @@ export default function ExerciseDetail({ exercise }) {
   const { entries } = state
   const stats = computeStats(entries)
   const last = entries.at(-1)
+  // Séries com muitas repetições não têm 1RM estimado: ficam fora do gráfico dessa métrica.
+  const chartEntries = metric === 'oneRm' ? entries.filter((e) => entryOneRepMax(e) !== null) : entries
 
   async function register(values) {
     const created = await api.createEntry(exercise.id, values)
@@ -74,6 +78,7 @@ export default function ExerciseDetail({ exercise }) {
                 {[
                   ['weight', 'Carga'],
                   ['volume', 'Volume'],
+                  ['oneRm', '1RM'],
                 ].map(([value, label]) => (
                   <button
                     key={value}
@@ -87,8 +92,10 @@ export default function ExerciseDetail({ exercise }) {
                 ))}
               </div>
             </header>
-            <WeightChart key={metric} entries={entries} metric={metric} />
+            <WeightChart key={metric} entries={chartEntries} metric={metric} />
           </section>
+
+          <OneRepMax entries={entries} />
 
           <EntryForm
             initial={last ? { sets: last.sets, reps: last.reps, weightKg: last.weightKg } : DEFAULTS}
@@ -123,6 +130,7 @@ export default function ExerciseDetail({ exercise }) {
                         </strong>
                         <span className="micro">
                           {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          {entryOneRepMax(e) !== null && ` · 1RM ~${formatNumber(entryOneRepMax(e))} kg`}
                         </span>
                       </span>
                       <span className="row__end">
