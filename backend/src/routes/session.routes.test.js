@@ -115,6 +115,28 @@ describe('POST /workouts/:id/sessions (finalizar o treino)', () => {
     ]);
   });
 
+  it('devolve os exercícios agrupados e o que o modelo previa, para comparar', async () => {
+    workoutRepository.findById.mockResolvedValue({
+      id: WID,
+      name: 'Treino A',
+      items: [
+        { exercise: { id: EX1 }, sets: 3, reps: 8, weightKg: 60 },
+        { exercise: { id: EX2 }, sets: 2, reps: 10, weightKg: 100 },
+      ],
+    });
+    exerciseRepository.findVisibleByIds.mockResolvedValue([{ id: EX1 }, { id: EX2 }]);
+    sessionRepository.findPrevious.mockResolvedValue(null);
+    sessionRepository.create.mockResolvedValue(sessionRow());
+
+    const res = await request(app).post(`/workouts/${WID}/sessions`).set('Authorization', token()).send(done);
+
+    // modelo: 3×8×60 = 1440 e 2×10×100 = 2000
+    expect(res.body.planned).toEqual({ volume: 3440, byExercise: { [EX1]: 1440, [EX2]: 2000 } });
+    expect(res.body.exercises).toHaveLength(2);
+    expect(res.body.exercises[0]).toMatchObject({ exercise: { id: EX1 }, volume: 1680 });
+    expect(res.body.exercises[0].blocks).toEqual([{ sets: 3, reps: 8, weightKg: 70, volume: 1680 }]);
+  });
+
   it('usa o nome do modelo na hora e o usuário do token', async () => {
     ready();
     sessionRepository.create.mockResolvedValue(sessionRow());

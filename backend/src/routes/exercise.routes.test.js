@@ -59,6 +59,8 @@ describe('POST /exercises/:id/entries', () => {
       exerciseId,
       ...body,
       performedAt: performedAt.toISOString(),
+      volume: body.sets * body.reps * body.weightKg,
+      oneRepMax: expect.any(Number),
     });
     expect(res.body).not.toHaveProperty('userId');
   });
@@ -249,5 +251,54 @@ describe('GET /exercises', () => {
     const res = await request(app).get('/exercises?q=').set('Authorization', token());
 
     expect(res.status).toBe(400);
+  });
+});
+
+describe('GET /exercises/:id/stats', () => {
+  const statsUrl = `/exercises/${exerciseId}/stats`;
+
+  it('401 sem token', async () => {
+    expect((await request(app).get(statsUrl)).status).toBe(401);
+  });
+
+  it('200 devolve recordes e 1RM calculados no servidor', async () => {
+    exerciseRepository.findVisibleById.mockResolvedValue({ id: exerciseId });
+    entryRepository.listByUserAndExercise.mockResolvedValue([
+      { id: 'e-1', sets: 3, reps: 8, weightKg: 80, performedAt: new Date('2026-11-01') },
+      { id: 'e-2', sets: 3, reps: 8, weightKg: 85, performedAt: new Date('2026-11-03') },
+    ]);
+
+    const res = await request(app).get(statsUrl).set('Authorization', token('user-1'));
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ entryCount: 2, maxWeight: 85, maxReps: 8, maxVolume: 2040 });
+    expect(res.body.oneRepMax).toMatchObject({ value: 107.7, change: 6.4 });
+    expect(res.body.oneRepMax.loadTable[0]).toEqual({ pct: 95, reps: 2, weightKg: 102.5 });
+    expect(entryRepository.listByUserAndExercise).toHaveBeenCalledWith('user-1', exerciseId);
+  });
+
+  it('200 sem registros: tudo nulo', async () => {
+    exerciseRepository.findVisibleById.mockResolvedValue({ id: exerciseId });
+    entryRepository.listByUserAndExercise.mockResolvedValue([]);
+
+    const res = await request(app).get(statsUrl).set('Authorization', token());
+
+    expect(res.body).toEqual({
+      entryCount: 0,
+      maxWeight: null,
+      maxReps: null,
+      maxVolume: null,
+      oneRepMax: null,
+      oneRepMaxRepLimit: 20,
+    });
+  });
+
+  it('404 quando o exercício não é visível ao usuário', async () => {
+    exerciseRepository.findVisibleById.mockResolvedValue(null);
+
+    const res = await request(app).get(statsUrl).set('Authorization', token());
+
+    expect(res.status).toBe(404);
+    expect(entryRepository.listByUserAndExercise).not.toHaveBeenCalled();
   });
 });

@@ -36,6 +36,24 @@ export const list = (userId, limit) =>
     include: withEntries,
   });
 
+// Sessões a partir de um instante, para o resumo da semana.
+export const listSince = (userId, since) =>
+  prisma.workoutSession.findMany({
+    where: { userId, finishedAt: { gte: since } },
+    orderBy: { finishedAt: 'desc' },
+    include: withEntries,
+  });
+
+// Id do modelo do último treino realizado que veio de um modelo (define o próximo da sequência).
+export const findLastWorkoutId = async (userId) => {
+  const last = await prisma.workoutSession.findFirst({
+    where: { userId, workoutId: { not: null } },
+    orderBy: { finishedAt: 'desc' },
+    select: { workoutId: true },
+  });
+  return last?.workoutId ?? null;
+};
+
 export const findById = (id, userId) =>
   prisma.workoutSession.findFirst({ where: { id, userId }, include: withEntries });
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, describeError } from '../lib/api.js'
 import { formatLongDate, formatNumber } from '../lib/stats.js'
 import { suggestWorkoutName } from '../lib/workout.js'
-import { plannedVolume, workoutBadge } from '../lib/week.js'
+import { workoutBadge } from '../lib/week.js'
 import { ChevronRight, Clipboard, Pencil, Play, Plus } from './Icons.jsx'
 
 export default function WorkoutsScreen({ onNew, onEdit, onRun, onOpenSession }) {
@@ -67,7 +67,7 @@ export default function WorkoutsScreen({ onNew, onEdit, onRun, onOpenSession }) 
                 <div className="workout__id">
                   <strong className="workout__name">{w.name}</strong>
                   <span className="num workout__meta">
-                    {new Set(w.items.map((i) => i.exercise.id)).size} ex · {formatNumber(plannedVolume(w))} kg
+                    {w.exerciseCount} ex · {formatNumber(w.plannedVolume)} kg
                   </span>
                 </div>
                 <button
@@ -80,9 +80,7 @@ export default function WorkoutsScreen({ onNew, onEdit, onRun, onOpenSession }) 
               </div>
               <p className="micro workout__list">
                 {[...new Set(w.items.map((i) => i.exercise.name))].slice(0, 3).join(' · ')}
-                {new Set(w.items.map((i) => i.exercise.id)).size > 3
-                  ? ` · +${new Set(w.items.map((i) => i.exercise.id)).size - 3}`
-                  : ''}
+                {w.exerciseCount > 3 ? ` · +${w.exerciseCount - 3}` : ''}
               </p>
               <div className="workout__foot">
                 <span className="micro">

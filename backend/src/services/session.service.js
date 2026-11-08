@@ -2,12 +2,19 @@ import { AppError } from '../middlewares/error.middleware.js';
 import * as sessionRepository from '../repositories/session.repository.js';
 import * as workoutRepository from '../repositories/workout.repository.js';
 import { assertExercisesVisible } from './workout.service.js';
-import { compareWithPrevious, computeSessionStats, itemVolume } from './workoutStats.service.js';
+import {
+  compareWithPrevious,
+  computeSessionStats,
+  groupByExercise,
+  itemVolume,
+  plannedByExercise,
+  plannedTotals,
+} from './workoutStats.service.js';
 
 // Esquecer o treino aberto não pode gerar uma duração absurda.
 const MAX_DURATION_MS = 12 * 60 * 60 * 1000;
 
-const toStatsItems = (entries) =>
+export const toStatsItems = (entries) =>
   entries.map((e) => ({
     exerciseId: e.exerciseId,
     exerciseName: e.exercise.name,
@@ -23,7 +30,7 @@ function durationMinutes(startedAt, finishedAt) {
   return Math.round(ms / 60000);
 }
 
-async function toSessionResponse(userId, session) {
+async function toSessionResponse(userId, session, planned = null) {
   const stats = computeSessionStats(toStatsItems(session.entries));
 
   let previous = null;
@@ -48,7 +55,17 @@ async function toSessionResponse(userId, session) {
       weightKg: e.weightKg,
       volume: itemVolume(e),
     })),
+    // Os blocos do mesmo exercício já agrupados, com o volume somado: é o que a tela mostra.
+    exercises: groupByExercise(
+      session.entries.map((e) => ({
+        exercise: { id: e.exercise.id, name: e.exercise.name },
+        sets: e.sets,
+        reps: e.reps,
+        weightKg: e.weightKg,
+      })),
+    ),
     stats: { ...stats, previous },
+    planned,
   };
 }
 
@@ -68,7 +85,11 @@ export async function finish(userId, workoutId, { items, startedAt }) {
     finishedAt: new Date(),
     items,
   });
-  return toSessionResponse(userId, session);
+  // O modelo continua como estava: o que ele previa serve de comparação com o que foi feito.
+  return toSessionResponse(userId, session, {
+    volume: plannedTotals(workout.items).volume,
+    byExercise: plannedByExercise(workout.items),
+  });
 }
 
 export async function list(userId, limit = 20) {

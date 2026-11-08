@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { entryOneRepMax } from '../lib/oneRepMax.js'
-import { entryVolume, formatNumber, formatShortDate } from '../lib/stats.js'
+import { formatNumber, formatShortDate } from '../lib/stats.js'
 
 const W = 340
 const H = 190
@@ -9,8 +8,8 @@ const MAX_POINTS = 12
 
 const METRICS = {
   weight: { label: 'Carga', value: (e) => e.weightKg },
-  volume: { label: 'Volume', value: entryVolume },
-  oneRm: { label: '1RM estimado', value: entryOneRepMax },
+  volume: { label: 'Volume', value: (e) => e.volume },
+  oneRm: { label: '1RM estimado', value: (e) => e.oneRepMax },
 }
 
 // Evolução nos últimos registros. Linha de 2 px, marcas de 8 px com anel da cor do fundo,

@@ -116,22 +116,6 @@ export function sumVolume(items) {
   return Math.round(total * 10) / 10
 }
 
-// Itens da API (um por bloco) agrupados por exercício, mantendo a ordem: [{ exercise, blocks, volume }].
-export function groupByExercise(apiItems) {
-  const groups = []
-  for (const item of apiItems) {
-    const last = groups[groups.length - 1]
-    const volume = item.volume ?? item.sets * item.reps * item.weightKg
-    if (last && last.exercise.id === item.exercise.id) {
-      last.blocks.push(item)
-      last.volume += volume
-    } else {
-      groups.push({ exercise: item.exercise, blocks: [item], volume })
-    }
-  }
-  return groups.map((g) => ({ ...g, volume: Math.round(g.volume * 10) / 10 }))
-}
-
 // Próximo nome livre da sequência: Treino A, Treino B, Treino C...
 export function suggestWorkoutName(workouts) {
   const taken = new Set(workouts.map((w) => w.name.trim().toLowerCase()))
